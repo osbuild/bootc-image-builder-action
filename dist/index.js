@@ -1,4 +1,5 @@
-import require$$0 from 'os';
+import * as require$$0 from 'os';
+import require$$0__default from 'os';
 import require$$0$1 from 'crypto';
 import require$$1 from 'fs';
 import require$$1$5 from 'path';
@@ -27,6 +28,7 @@ import require$$6 from 'string_decoder';
 import require$$0$9 from 'diagnostics_channel';
 import require$$2$2 from 'child_process';
 import require$$6$1 from 'timers';
+import * as fs from 'fs/promises';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -113,7 +115,7 @@ function requireCommand () {
 	};
 	Object.defineProperty(command, "__esModule", { value: true });
 	command.issue = command.issueCommand = undefined;
-	const os = __importStar(require$$0);
+	const os = __importStar(require$$0__default);
 	const utils_1 = requireUtils$1();
 	/**
 	 * Commands
@@ -223,7 +225,7 @@ function requireFileCommand () {
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	const crypto = __importStar(require$$0$1);
 	const fs = __importStar(require$$1);
-	const os = __importStar(require$$0);
+	const os = __importStar(require$$0__default);
 	const utils_1 = requireUtils$1();
 	function issueFileCommand(command, message) {
 	    const filePath = process.env[`GITHUB_${command}`];
@@ -25191,7 +25193,7 @@ function requireSummary () {
 		};
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = undefined;
-		const os_1 = require$$0;
+		const os_1 = require$$0__default;
 		const fs_1 = require$$1;
 		const { access, appendFile, writeFile } = fs_1.promises;
 		exports.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
@@ -26080,7 +26082,7 @@ function requireToolrunner () {
 	};
 	Object.defineProperty(toolrunner, "__esModule", { value: true });
 	toolrunner.argStringToArray = toolrunner.ToolRunner = undefined;
-	const os = __importStar(require$$0);
+	const os = __importStar(require$$0__default);
 	const events = __importStar(require$$4);
 	const child = __importStar(require$$2$2);
 	const path = __importStar(require$$1$5);
@@ -26823,7 +26825,7 @@ function requirePlatform () {
 		};
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getDetails = exports.isLinux = exports.isMacOS = exports.isWindows = exports.arch = exports.platform = undefined;
-		const os_1 = __importDefault(require$$0);
+		const os_1 = __importDefault(require$$0__default);
 		const exec = __importStar(requireExec());
 		const getWindowsInfo = () => __awaiter(undefined, undefined, undefined, function* () {
 		    const { stdout: version } = yield exec.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', undefined, {
@@ -26926,7 +26928,7 @@ function requireCore () {
 		const command_1 = requireCommand();
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$1();
-		const os = __importStar(require$$0);
+		const os = __importStar(require$$0__default);
 		const path = __importStar(require$$1$5);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
@@ -27240,21 +27242,158 @@ var coreExports = requireCore();
 
 var execExports = requireExec();
 
-async function build(options) {
-    return new Promise((resolve) => {
-        let builderImage = options.builderImage || 'quay.io/centos-bootc/bootc-image-builder:latest';
-        // Pull the builder image
-        pullImage(builderImage);
-        coreExports.debug(`Building image ${options.image} using config file ${options.configFilePath} via ${builderImage}`);
-        execExports.exec('podman', ['run', '--rm', 'hello-world:latest'], {});
-    });
+async function isRootUser() {
+    return require$$0.userInfo().uid === 0;
 }
-function pullImage(image, tlsVerify) {
-    return new Promise((resolve) => {
-        // Placeholder for the pull logic
-        coreExports.debug(`Pulling image ${image}...`);
-        resolve();
+async function execAsRoot(executable, args) {
+    const isRoot = await isRootUser();
+    if (!isRoot) {
+        args.unshift(executable);
+        executable = 'sudo';
+    }
+    await execExports.exec(executable, args);
+}
+async function createDirectory(directory) {
+    try {
+        const executible = 'mkdir';
+        await execAsRoot(executible, ['-p', directory]);
+    }
+    catch (error) {
+        coreExports.setFailed(`Failed to create directory ${directory}: ${error.message}`);
+    }
+}
+async function deleteDirectory(directory) {
+    try {
+        const executible = 'rm';
+        await execAsRoot(executible, ['-rf', directory]);
+    }
+    catch (error) {
+        coreExports.setFailed(`Failed to delete directory ${directory}: ${error.message}`);
+    }
+}
+async function writeToFile(file, data) {
+    try {
+        const tempFile = `${file}.tmp`;
+        await execAsRoot('sh', ['-c', `echo '${data.toString()}' > ${tempFile}`]);
+        await execAsRoot('mv', [tempFile, file]);
+    }
+    catch (error) {
+        coreExports.setFailed(`Failed to write to file ${file}: ${error.message}`);
+    }
+}
+
+async function build(options) {
+    try {
+        // Parse the options
+        const executible = 'podman';
+        const configFileExtension = options.configFilePath.split('.').pop();
+        const outputDirectory = './output';
+        const targetArchFlag = options.targetArch
+            ? `--target-arch ${options.targetArch}`
+            : '';
+        const tlsVerifyFlag = options.tlsVerify ? '' : '--tls-verify false';
+        const chownFlag = options.chown ? `--chown ${options.chown}` : '';
+        let typeFlags = '';
+        if (options.types && options.types.length > 0) {
+            typeFlags = options.types
+                .filter((type) => type.trim() !== '')
+                .map((type) => `--type ${type}`)
+                .join(' ');
+        }
+        // Workaround GitHub Actions Podman integration issues
+        coreExports.debug('Configuring Podman storage (see https://github.com/osbuild/bootc-image-builder/issues/446)');
+        await deleteDirectory('/var/lib/containers/storage');
+        await createDirectory('/etc/containers');
+        const storageConf = Buffer.from('[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n');
+        await writeToFile('/etc/containers/storage.conf', storageConf);
+        // Pull the required images
+        await pullImage(options.builderImage, options.tlsVerify);
+        await pullImage(options.image, options.tlsVerify);
+        // Create the output directory
+        await createDirectory(outputDirectory);
+        coreExports.debug(`Building image ${options.image} using config file ${options.configFilePath} via ${options.builderImage}`);
+        const args = [
+            'run',
+            '--rm',
+            '--privileged',
+            '--security-opt',
+            'label=type:unconfined_t',
+            '--volume',
+            `${options.configFilePath}:/config.${configFileExtension}:ro`,
+            '--volume',
+            `${outputDirectory}:/output`,
+            '--volume',
+            '/var/lib/containers/storage:/var/lib/containers/storage',
+            options.builderImage,
+            'build',
+            ...tlsVerifyFlag.split(' '), // --tls-verify <bool>
+            ...targetArchFlag.split(' '), // --target-arch <arch>
+            ...chownFlag.split(' '), // --chown <uid:gid>
+            ...typeFlags.split(' '), // --type <type> ...
+            '--output',
+            '/output', // --output <dir>
+            '--local',
+            options.image // <image>
+        ].filter((arg) => arg);
+        await execAsRoot(executible, args);
+        const artifacts = await fs.readdir(outputDirectory, {
+            recursive: true,
+            withFileTypes: true
+        });
+        // Get the *.json manifest file from the output directory using fs
+        const manifestPath = artifacts.find((file) => file.isFile() && file.name.endsWith('.json'))?.name;
+        // Create a list of <type>:<path> output paths for each type.
+        // Some paths may need to be overwritten to match the expected type (e.g. bootiso -> iso)
+        const outputArtifacts = await extractArtifactTypes(artifacts);
+        return {
+            manifestPath: `${outputDirectory}/${manifestPath}`,
+            outputDirectory,
+            outputArtifacts
+        };
+    }
+    catch (error) {
+        coreExports.setFailed(`Build process failed: ${error.message}`);
+        return {
+            manifestPath: '',
+            outputDirectory: '',
+            outputArtifacts: []
+        };
+    }
+}
+async function pullImage(image, tlsVerify) {
+    try {
+        const executible = 'podman';
+        const tlsFlags = tlsVerify ? '' : '--tls-verify=false';
+        await execAsRoot(executible, ['pull', tlsFlags, image].filter((arg) => arg));
+    }
+    catch (error) {
+        coreExports.setFailed(`Failed to pull image ${image}: ${error.message}`);
+    }
+}
+// Return a map of strings to strings, where the key is the type (evaluated from the path) and the value is the path.
+// E.G. ./output/bootiso/boot.iso -> { bootiso: ./output/bootiso/boot.iso }
+function extractArtifactTypes(files) {
+    coreExports.debug(`Extracting artifact types from artifact paths: ${JSON.stringify(files)}`);
+    const outputArtifacts = files
+        .filter((file) => file.isFile() && !file.name.endsWith('.json'))
+        .map((file) => {
+        coreExports.debug(`Extracting type from artifact path: ${JSON.stringify(file)}`);
+        const fileName = file.name.split('/').pop();
+        coreExports.debug(`Extracted file name: ${fileName}`);
+        if (!fileName) {
+            throw new Error(`Failed to extract file name from artifact path: ${file.name}`);
+        }
+        // Get the type from the path.
+        // E.g. ./output/bootiso/boot.iso -> bootiso
+        const type = file.parentPath.split('/').pop();
+        if (!type) {
+            throw new Error(`Failed to extract type from artifact path: ${file.parentPath}`);
+        }
+        const pathRelative = `${file.parentPath}/${file.name}`;
+        const pathAbsolute = require$$1$5.resolve(pathRelative);
+        return { type, path: pathRelative, pathAbsolute };
     });
+    return outputArtifacts;
 }
 
 /**
@@ -27269,13 +27408,13 @@ async function run() {
         const builderImage = coreExports.getInput('builder-image');
         const chown = coreExports.getInput('chown');
         const rootfs = coreExports.getInput('rootfs');
-        const tlsVerify = coreExports.getInput('tls-verify') === 'true';
-        const types = coreExports.getInput('types').split(',');
+        const tlsVerify = coreExports.getInput('tls-verify').toLowerCase() === 'true';
+        const types = coreExports.getInput('types').split(/[\s,]+/); // Split on whitespace or commas
         const targetArch = coreExports.getInput('target-arch');
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         coreExports.debug(`Building image ${image} using config file ${configFilePath}`);
         // Invoke the main action logic
-        await build({
+        const buildOutput = await build({
             configFilePath,
             image,
             builderImage,
@@ -27286,7 +27425,9 @@ async function run() {
             targetArch
         });
         // Set outputs for other workflow steps to use
-        coreExports.setOutput('time', new Date().toTimeString());
+        coreExports.setOutput('manifest-path', buildOutput.manifestPath);
+        coreExports.setOutput('output-directory', buildOutput.outputDirectory);
+        coreExports.setOutput('output-paths', JSON.stringify(buildOutput.outputArtifacts));
     }
     catch (error) {
         // Fail the workflow run if an error occurs

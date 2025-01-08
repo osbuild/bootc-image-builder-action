@@ -13,15 +13,16 @@ export async function run(): Promise<void> {
     const builderImage: string = core.getInput('builder-image')
     const chown: string = core.getInput('chown')
     const rootfs: string = core.getInput('rootfs')
-    const tlsVerify: boolean = core.getInput('tls-verify') === 'true'
-    const types: Array<string> = core.getInput('types').split(',')
+    const tlsVerify: boolean =
+      core.getInput('tls-verify').toLowerCase() === 'true'
+    const types: Array<string> = core.getInput('types').split(/[\s,]+/) // Split on whitespace or commas
     const targetArch: string = core.getInput('target-arch')
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`Building image ${image} using config file ${configFilePath}`)
 
     // Invoke the main action logic
-    await build({
+    const buildOutput = await build({
       configFilePath,
       image,
       builderImage,
@@ -33,7 +34,9 @@ export async function run(): Promise<void> {
     })
 
     // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    core.setOutput('manifest-path', buildOutput.manifestPath)
+    core.setOutput('output-directory', buildOutput.outputDirectory)
+    core.setOutput('output-paths', JSON.stringify(buildOutput.outputArtifacts))
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)

@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-typescript:
     name: TypeScript Tests
@@ -46,16 +50,73 @@ jobs:
 
   test-action:
     name: GitHub Actions Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        types:
+          - "raw qcow2"
+          - "iso"
 
     steps:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Action
-        id: test-action
+      - name: Get Runner Information
+        id: runner-info
+        run: |
+          USER_UID=$(id -u)
+          USER_GID=$(id -g)
+
+          # Concatenate the types with a hyphen
+          TYPES=$(echo "${{ matrix.types }}" | tr ' ' '-')
+
+          echo "USER_UID=${USER_UID}" >> $GITHUB_OUTPUT
+          echo "USER_GID=${USER_GID}" >> $GITHUB_OUTPUT
+          echo "TYPES=${TYPES}" >> $GITHUB_OUTPUT
+
+          whereis jq
+          whereis file
+          jq --version
+          file --version
+
+      - name: Test Action
+        id: action
         uses: ./
         with:
           config-file: ./__fixtures__/config.toml
           image: ghcr.io/centos-workstation/achillobator:latest
+          chown: ${{ steps.runner-info.outputs.USER_UID }}:${{
+            steps.runner-info.outputs.USER_GID }}
+          types: ${{ matrix.types }}
+
+      - name: List Outputs
+        env:
+          OUTPUT_PATHS_JSON: ${{ steps.action.outputs.output-paths }}
+        run: |
+          whereis jq
+          whereis file
+          jq --version
+          file --version
+
+          echo "Output Directory: ${{ steps.action.outputs.output-directory }}"
+          echo "Manifest Path: ${{ steps.action.outputs.manifest-path }}"
+          echo "Output Paths: ${{ steps.action.outputs.output-paths }}"
+
+            OUTPUT_PATHS=$(echo "$OUTPUT_PATHS_JSON" | jq -c '.[]')
+            for OUTPUT in $OUTPUT_PATHS; do
+            TYPE=$(echo "$OUTPUT" | jq -r '.type')
+            PATH=$(echo "$OUTPUT" | jq -r '.path')
+            PATH_ABSOLUTE=$(echo "$OUTPUT" | jq -r '.pathAbsolute')
+            echo "Type: $TYPE, Path: $PATH, Absolute Path: $PATH_ABSOLUTE"
+
+            file "$PATH"
+            file "$PATH_ABSOLUTE"
+            done
+
+      - name: Upload Outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ steps.runner-info.outputs.TYPES }}
+          path: ${{ steps.action.outputs.output-directory }}

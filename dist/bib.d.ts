@@ -1,17 +1,27 @@
 export interface BootcImageBuilderOptions {
     configFilePath: string;
     image: string;
-    builderImage?: string;
+    builderImage: string;
     chown?: string;
     rootfs?: string;
-    tlsVerify?: boolean;
+    tlsVerify: boolean;
     types?: Array<string>;
     targetArch?: string;
     awsOptions?: AWSOptions;
+}
+export interface BootcImageBuilderOutputs {
+    manifestPath: string;
+    outputDirectory: string;
+    outputArtifacts: OutputArtifact[];
 }
 export interface AWSOptions {
     AMIName: string;
     BucketName: string;
     Region?: string;
 }
-export declare function build(options: BootcImageBuilderOptions): Promise<void>;
+export interface OutputArtifact {
+    type: string;
+    path: string;
+    pathAbsolute: string;
+}
+export declare function build(options: BootcImageBuilderOptions): Promise<BootcImageBuilderOutputs>;

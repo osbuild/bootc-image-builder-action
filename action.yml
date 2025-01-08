@@ -10,6 +10,10 @@ inputs:
   image:
     description: 'The image, including the registry and tag'
     required: true
+  builder-image:
+    description: 'The Bootc Image Builder image to use for running the action'
+    required: false
+    default: 'quay.io/centos-bootc/bootc-image-builder:latest'
   chown:
     description: 'The user and group to chown the output files to'
     required: false
@@ -31,10 +35,11 @@ inputs:
 outputs:
   output-directory:
     description: 'The directory where the generated artifacts are stored'
-  output-artifact-path:
-    description: 'The path to the generated artifact'
-  output-artifact-checksum-path:
-    description: 'The path to the checksum of the generated artifact'
+  output-paths:
+    description:
+      'A JSON array of the artifact types to the generated disk images or ISOs'
+  manifest-path:
+    description: 'The path to the manifest file'
 
 runs:
   using: node20
