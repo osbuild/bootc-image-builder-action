@@ -27238,17 +27238,22 @@ function requireCore () {
 
 var coreExports = requireCore();
 
-/**
- * Waits for a number of milliseconds.
- *
- * @param milliseconds The number of milliseconds to wait.
- * @returns Resolves with 'done!' after the wait is over.
- */
-async function wait(milliseconds) {
+var execExports = requireExec();
+
+async function build(options) {
     return new Promise((resolve) => {
-        if (isNaN(milliseconds))
-            throw new Error('milliseconds is not a number');
-        setTimeout(() => resolve('done!'), milliseconds);
+        let builderImage = options.builderImage || 'quay.io/centos-bootc/bootc-image-builder:latest';
+        // Pull the builder image
+        pullImage(builderImage);
+        coreExports.debug(`Building image ${options.image} using config file ${options.configFilePath} via ${builderImage}`);
+        execExports.exec('podman', ['run', '--rm', 'hello-world:latest'], {});
+    });
+}
+function pullImage(image, tlsVerify) {
+    return new Promise((resolve) => {
+        // Placeholder for the pull logic
+        coreExports.debug(`Pulling image ${image}...`);
+        resolve();
     });
 }
 
@@ -27259,13 +27264,27 @@ async function wait(milliseconds) {
  */
 async function run() {
     try {
-        const ms = coreExports.getInput('milliseconds');
+        const configFilePath = coreExports.getInput('config-file');
+        const image = coreExports.getInput('image');
+        const builderImage = coreExports.getInput('builder-image');
+        const chown = coreExports.getInput('chown');
+        const rootfs = coreExports.getInput('rootfs');
+        const tlsVerify = coreExports.getInput('tls-verify') === 'true';
+        const types = coreExports.getInput('types').split(',');
+        const targetArch = coreExports.getInput('target-arch');
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        coreExports.debug(`Waiting ${ms} milliseconds ...`);
-        // Log the current timestamp, wait, then log the new timestamp
-        coreExports.debug(new Date().toTimeString());
-        await wait(parseInt(ms, 10));
-        coreExports.debug(new Date().toTimeString());
+        coreExports.debug(`Building image ${image} using config file ${configFilePath}`);
+        // Invoke the main action logic
+        await build({
+            configFilePath,
+            image,
+            builderImage,
+            chown,
+            rootfs,
+            tlsVerify,
+            types,
+            targetArch
+        });
         // Set outputs for other workflow steps to use
         coreExports.setOutput('time', new Date().toTimeString());
     }

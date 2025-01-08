@@ -29,7 +29,7 @@ export async function run(): Promise<void> {
       rootfs,
       tlsVerify,
       types,
-      targetArch,
+      targetArch
     })
 
     // Set outputs for other workflow steps to use

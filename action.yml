@@ -5,36 +5,36 @@ author: Robert Sturla
 # Define your inputs here.
 inputs:
   config-file:
-    description: "The path to the configuration file"
+    description: 'The path to the configuration file'
     required: true
   image:
-    description: "The image, including the registry and tag"
+    description: 'The image, including the registry and tag'
     required: true
   chown:
-    description: "The user and group to chown the output files to"
+    description: 'The user and group to chown the output files to'
     required: false
   rootfs:
-    description: "The path to the rootfs"
+    description: 'The path to the rootfs'
     required: false
   tls-verify:
-    description: "Whether to verify TLS certificates"
+    description: 'Whether to verify TLS certificates'
     required: false
-    default: "true"
+    default: 'true'
   types:
-    description: "The types of images to generate"
+    description: 'The types of images to generate'
     required: false
   targetArch:
-    description: "The target architecture"
+    description: 'The target architecture'
     required: false
 
 # Define your outputs here.
 outputs:
   output-directory:
-    description: "The directory where the generated artifacts are stored"
+    description: 'The directory where the generated artifacts are stored'
   output-artifact-path:
-    description: "The path to the generated artifact"
+    description: 'The path to the generated artifact'
   output-artifact-checksum-path:
-    description: "The path to the checksum of the generated artifact"
+    description: 'The path to the checksum of the generated artifact'
 
 runs:
   using: node20
