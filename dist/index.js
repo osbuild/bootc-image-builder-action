@@ -27288,9 +27288,6 @@ async function build(options) {
         const executible = 'podman';
         const configFileExtension = options.configFilePath.split('.').pop();
         const outputDirectory = './output';
-        const targetArchFlag = options.targetArch
-            ? `--target-arch ${options.targetArch}`
-            : '';
         const tlsVerifyFlag = options.tlsVerify ? '' : '--tls-verify false';
         const chownFlag = options.chown ? `--chown ${options.chown}` : '';
         let typeFlags = '';
@@ -27307,8 +27304,10 @@ async function build(options) {
         const storageConf = Buffer.from('[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n');
         await writeToFile('/etc/containers/storage.conf', storageConf);
         // Pull the required images
+        coreExports.startGroup('Pulling required images');
         await pullImage(options.builderImage, options.tlsVerify);
         await pullImage(options.image, options.tlsVerify);
+        coreExports.endGroup();
         // Create the output directory
         await createDirectory(outputDirectory);
         coreExports.debug(`Building image ${options.image} using config file ${options.configFilePath} via ${options.builderImage}`);
@@ -27327,7 +27326,6 @@ async function build(options) {
             options.builderImage,
             'build',
             ...tlsVerifyFlag.split(' '), // --tls-verify <bool>
-            ...targetArchFlag.split(' '), // --target-arch <arch>
             ...chownFlag.split(' '), // --chown <uid:gid>
             ...typeFlags.split(' '), // --type <type> ...
             '--output',
@@ -27335,7 +27333,9 @@ async function build(options) {
             '--local',
             options.image // <image>
         ].filter((arg) => arg);
+        coreExports.startGroup('Building artifact(s)');
         await execAsRoot(executible, args);
+        coreExports.endGroup();
         const artifacts = await fs.readdir(outputDirectory, {
             recursive: true,
             withFileTypes: true
@@ -27391,7 +27391,7 @@ function extractArtifactTypes(files) {
         }
         const pathRelative = `${file.parentPath}/${file.name}`;
         const pathAbsolute = require$$1$5.resolve(pathRelative);
-        return { type, path: pathRelative, pathAbsolute };
+        return { type, path: pathAbsolute };
     });
     return outputArtifacts;
 }
@@ -27410,7 +27410,6 @@ async function run() {
         const rootfs = coreExports.getInput('rootfs');
         const tlsVerify = coreExports.getInput('tls-verify').toLowerCase() === 'true';
         const types = coreExports.getInput('types').split(/[\s,]+/); // Split on whitespace or commas
-        const targetArch = coreExports.getInput('target-arch');
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         coreExports.debug(`Building image ${image} using config file ${configFilePath}`);
         // Invoke the main action logic
@@ -27421,8 +27420,7 @@ async function run() {
             chown,
             rootfs,
             tlsVerify,
-            types,
-            targetArch
+            types
         });
         // Set outputs for other workflow steps to use
         coreExports.setOutput('manifest-path', buildOutput.manifestPath);

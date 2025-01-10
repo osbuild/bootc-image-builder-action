@@ -1,6 +1,6 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
+  "name": "bootc-image-builder-action",
+  "description": "A GitHub Action to generate bootable container artifacts using Bootc Image Builder",
   "version": "0.0.0",
   "author": "",
   "type": "module",

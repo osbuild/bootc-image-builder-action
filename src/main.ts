@@ -16,7 +16,6 @@ export async function run(): Promise<void> {
     const tlsVerify: boolean =
       core.getInput('tls-verify').toLowerCase() === 'true'
     const types: Array<string> = core.getInput('types').split(/[\s,]+/) // Split on whitespace or commas
-    const targetArch: string = core.getInput('target-arch')
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`Building image ${image} using config file ${configFilePath}`)
@@ -29,8 +28,7 @@ export async function run(): Promise<void> {
       chown,
       rootfs,
       tlsVerify,
-      types,
-      targetArch
+      types
     })
 
     // Set outputs for other workflow steps to use

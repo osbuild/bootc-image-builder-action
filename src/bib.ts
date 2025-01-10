@@ -17,7 +17,6 @@ export interface BootcImageBuilderOptions {
   rootfs?: string
   tlsVerify: boolean
   types?: Array<string>
-  targetArch?: string
   awsOptions?: AWSOptions
 }
 
@@ -36,7 +35,6 @@ export interface AWSOptions {
 export interface OutputArtifact {
   type: string
   path: string
-  pathAbsolute: string
 }
 
 export async function build(
@@ -48,9 +46,6 @@ export async function build(
     const configFileExtension = options.configFilePath.split('.').pop()
     const outputDirectory = './output'
 
-    const targetArchFlag = options.targetArch
-      ? `--target-arch ${options.targetArch}`
-      : ''
     const tlsVerifyFlag = options.tlsVerify ? '' : '--tls-verify false'
     const chownFlag = options.chown ? `--chown ${options.chown}` : ''
 
@@ -74,8 +69,10 @@ export async function build(
     await writeToFile('/etc/containers/storage.conf', storageConf)
 
     // Pull the required images
+    core.startGroup('Pulling required images')
     await pullImage(options.builderImage, options.tlsVerify)
     await pullImage(options.image, options.tlsVerify)
+    core.endGroup()
 
     // Create the output directory
     await createDirectory(outputDirectory)
@@ -99,7 +96,6 @@ export async function build(
       options.builderImage,
       'build',
       ...tlsVerifyFlag.split(' '), // --tls-verify <bool>
-      ...targetArchFlag.split(' '), // --target-arch <arch>
       ...chownFlag.split(' '), // --chown <uid:gid>
       ...typeFlags.split(' '), // --type <type> ...
       '--output',
@@ -108,7 +104,9 @@ export async function build(
       options.image // <image>
     ].filter((arg) => arg)
 
+    core.startGroup('Building artifact(s)')
     await execAsRoot(executible, args)
+    core.endGroup()
 
     const artifacts = await fs.readdir(outputDirectory, {
       recursive: true,
@@ -185,7 +183,7 @@ function extractArtifactTypes(files: Dirent[]): Array<OutputArtifact> {
       const pathRelative = `${file.parentPath}/${file.name}`
       const pathAbsolute = path.resolve(pathRelative)
 
-      return { type, path: pathRelative, pathAbsolute }
+      return { type, path: pathAbsolute }
     })
 
   return outputArtifacts

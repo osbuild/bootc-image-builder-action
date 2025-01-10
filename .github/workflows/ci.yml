@@ -55,8 +55,8 @@ jobs:
       fail-fast: false
       matrix:
         types:
-          - "raw qcow2"
-          - "iso"
+          - 'raw qcow2'
+          - 'iso'
 
     steps:
       - name: Checkout
@@ -72,14 +72,11 @@ jobs:
           # Concatenate the types with a hyphen
           TYPES=$(echo "${{ matrix.types }}" | tr ' ' '-')
 
-          echo "USER_UID=${USER_UID}" >> $GITHUB_OUTPUT
-          echo "USER_GID=${USER_GID}" >> $GITHUB_OUTPUT
-          echo "TYPES=${TYPES}" >> $GITHUB_OUTPUT
-
-          whereis jq
-          whereis file
-          jq --version
-          file --version
+          {
+            echo "USER_UID=${USER_UID}"
+            echo "USER_GID=${USER_GID}"
+            echo "TYPES=${TYPES}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Test Action
         id: action
@@ -87,7 +84,8 @@ jobs:
         with:
           config-file: ./__fixtures__/config.toml
           image: ghcr.io/centos-workstation/achillobator:latest
-          chown: ${{ steps.runner-info.outputs.USER_UID }}:${{
+          chown:
+            ${{ steps.runner-info.outputs.USER_UID }}:${{
             steps.runner-info.outputs.USER_GID }}
           types: ${{ matrix.types }}
 
@@ -95,28 +93,23 @@ jobs:
         env:
           OUTPUT_PATHS_JSON: ${{ steps.action.outputs.output-paths }}
         run: |
-          whereis jq
-          whereis file
-          jq --version
-          file --version
-
           echo "Output Directory: ${{ steps.action.outputs.output-directory }}"
           echo "Manifest Path: ${{ steps.action.outputs.manifest-path }}"
-          echo "Output Paths: ${{ steps.action.outputs.output-paths }}"
+          echo "Output Paths: $OUTPUT_PATHS_JSON"
 
-            OUTPUT_PATHS=$(echo "$OUTPUT_PATHS_JSON" | jq -c '.[]')
-            for OUTPUT in $OUTPUT_PATHS; do
-            TYPE=$(echo "$OUTPUT" | jq -r '.type')
-            PATH=$(echo "$OUTPUT" | jq -r '.path')
-            PATH_ABSOLUTE=$(echo "$OUTPUT" | jq -r '.pathAbsolute')
-            echo "Type: $TYPE, Path: $PATH, Absolute Path: $PATH_ABSOLUTE"
+          for OUTPUT in $(echo "$OUTPUT_PATHS_JSON" | jq -rc ".[]"); do
+            ARTIFACT_TYPE=$(echo "$OUTPUT" | jq -r ".type")
+            echo "Detected Type: $ARTIFACT_TYPE"
+            ARTIFACT_PATH=$(echo "$OUTPUT" | jq -r ".path")
+            echo "Detected Path: $ARTIFACT_PATH"
+            echo "Type: $ARTIFACT_TYPE, Path: $ARTIFACT_PATH"
 
-            file "$PATH"
-            file "$PATH_ABSOLUTE"
-            done
+            file "$ARTIFACT_PATH"
+          done
 
       - name: Upload Outputs
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ steps.runner-info.outputs.TYPES }}
           path: ${{ steps.action.outputs.output-directory }}
+          if-no-files-found: error

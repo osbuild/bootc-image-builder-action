@@ -6,7 +6,6 @@ export interface BootcImageBuilderOptions {
     rootfs?: string;
     tlsVerify: boolean;
     types?: Array<string>;
-    targetArch?: string;
     awsOptions?: AWSOptions;
 }
 export interface BootcImageBuilderOutputs {
@@ -22,6 +21,5 @@ export interface AWSOptions {
 export interface OutputArtifact {
     type: string;
     path: string;
-    pathAbsolute: string;
 }
 export declare function build(options: BootcImageBuilderOptions): Promise<BootcImageBuilderOutputs>;
