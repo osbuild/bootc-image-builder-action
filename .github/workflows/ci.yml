@@ -82,7 +82,7 @@ jobs:
         id: action
         uses: ./
         with:
-          config-file: ./__fixtures__/config.toml
+          config-file: ./__fixtures__/config/config.toml
           image: ghcr.io/centos-workstation/achillobator:latest
           chown:
             ${{ steps.runner-info.outputs.USER_UID }}:${{
