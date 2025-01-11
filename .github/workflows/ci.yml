@@ -97,6 +97,7 @@ jobs:
           echo "Manifest Path: ${{ steps.action.outputs.manifest-path }}"
           echo "Output Paths: $OUTPUT_PATHS_JSON"
 
+          file ${{ steps.action.outputs.manifest-path }}
           for OUTPUT in $(echo "$OUTPUT_PATHS_JSON" | jq -rc ".[]"); do
             ARTIFACT_TYPE=$(echo "$OUTPUT" | jq -r ".type")
             echo "Detected Type: $ARTIFACT_TYPE"
