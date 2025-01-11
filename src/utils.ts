@@ -15,6 +15,7 @@ export async function execAsRoot(
     args.unshift(executable)
     executable = 'sudo'
   }
+
   await exec.exec(executable, args)
 }
 

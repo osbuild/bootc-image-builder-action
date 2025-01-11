@@ -41,32 +41,8 @@ export async function build(
   options: BootcImageBuilderOptions
 ): Promise<BootcImageBuilderOutputs> {
   try {
-    // Parse the options
-    const executible = 'podman'
-    const configFileExtension = options.configFilePath.split('.').pop()
-    const outputDirectory = './output'
-
-    const tlsVerifyFlag = options.tlsVerify ? '' : '--tls-verify false'
-    const chownFlag = options.chown ? `--chown ${options.chown}` : ''
-
-    let typeFlags = ''
-    if (options.types && options.types.length > 0) {
-      typeFlags = options.types
-        .filter((type) => type.trim() !== '')
-        .map((type) => `--type ${type}`)
-        .join(' ')
-    }
-
     // Workaround GitHub Actions Podman integration issues
-    core.debug(
-      'Configuring Podman storage (see https://github.com/osbuild/bootc-image-builder/issues/446)'
-    )
-    await deleteDirectory('/var/lib/containers/storage')
-    await createDirectory('/etc/containers')
-    const storageConf = Buffer.from(
-      '[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n'
-    )
-    await writeToFile('/etc/containers/storage.conf', storageConf)
+    await githubActionsWorkaroundFixes()
 
     // Pull the required images
     core.startGroup('Pulling required images')
@@ -75,37 +51,67 @@ export async function build(
     core.endGroup()
 
     // Create the output directory
+    const outputDirectory = './output'
     await createDirectory(outputDirectory)
 
     core.debug(
       `Building image ${options.image} using config file ${options.configFilePath} via ${options.builderImage}`
     )
 
-    const args = [
-      'run',
-      '--rm',
-      '--privileged',
-      '--security-opt',
-      'label=type:unconfined_t',
-      '--volume',
-      `${options.configFilePath}:/config.${configFileExtension}:ro`,
-      '--volume',
-      `${outputDirectory}:/output`,
-      '--volume',
-      '/var/lib/containers/storage:/var/lib/containers/storage',
-      options.builderImage,
-      'build',
-      ...tlsVerifyFlag.split(' '), // --tls-verify <bool>
-      ...chownFlag.split(' '), // --chown <uid:gid>
-      ...typeFlags.split(' '), // --type <type> ...
-      '--output',
-      '/output', // --output <dir>
-      '--local',
-      options.image // <image>
-    ].filter((arg) => arg)
+    const executible = 'podman'
+    const podmanArgs = []
+    const bibArgs = []
+
+    podmanArgs.push('run')
+    podmanArgs.push('--rm')
+    podmanArgs.push('--privileged')
+    podmanArgs.push('--security-opt label=type:unconfined_t')
+    podmanArgs.push(
+      '--volume /var/lib/containers/storage:/var/lib/containers/storage'
+    )
+    podmanArgs.push(`--volume ${outputDirectory}:/output`)
+    podmanArgs.push(
+      `--volume ${options.configFilePath}:/config.${options.configFilePath.split('.').pop()}:ro`
+    )
+
+    bibArgs.push('build')
+    bibArgs.push('--output /output')
+    bibArgs.push(options.tlsVerify ? '' : '--tls-verify false')
+    bibArgs.push(options.chown ? `--chown ${options.chown}` : '')
+    bibArgs.push(options.rootfs ? `--rootfs ${options.rootfs}` : '')
+
+    let bibTypeArgs: string[] = []
+    if (options.types && options.types.length > 0) {
+      bibTypeArgs = options.types
+        .filter((type) => type.trim() !== '') // Remove empty strings
+        .map((type) => `--type ${type}`)
+    }
+    bibArgs.push(...bibTypeArgs)
+
+    if (options.types?.includes('aws')) {
+      podmanArgs.push('--env AWS_*')
+
+      bibArgs.push(`--aws-bucket ${options.awsOptions?.BucketName}`)
+      bibArgs.push(`--aws-ami-name ${options.awsOptions?.AMIName}`)
+      bibArgs.push(
+        options.awsOptions?.Region
+          ? `--aws-region ${options.awsOptions?.Region}`
+          : ''
+      )
+    }
+
+    // The builder image and BIB image must be the last arguments of each command
+    podmanArgs.push(options.builderImage)
+    bibArgs.push(`--local ${options.image}`)
 
     core.startGroup('Building artifact(s)')
-    await execAsRoot(executible, args)
+    await execAsRoot(
+      executible,
+      [...podmanArgs, ...bibArgs]
+        .filter((arg) => arg)
+        .join(' ')
+        .split(' ') // Remove empty strings and split by spaces
+    )
     core.endGroup()
 
     const artifacts = await fs.readdir(outputDirectory, {
@@ -187,4 +193,16 @@ function extractArtifactTypes(files: Dirent[]): Array<OutputArtifact> {
     })
 
   return outputArtifacts
+}
+
+async function githubActionsWorkaroundFixes(): Promise<void> {
+  core.debug(
+    'Configuring Podman storage (see https://github.com/osbuild/bootc-image-builder/issues/446)'
+  )
+  await deleteDirectory('/var/lib/containers/storage')
+  await createDirectory('/etc/containers')
+  const storageConf = Buffer.from(
+    '[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n'
+  )
+  await writeToFile('/etc/containers/storage.conf', storageConf)
 }

@@ -2,6 +2,8 @@
 
 GitHub Action for building ISOs and disk images for Bootable Containers.
 
+AWS support is currently untested and may not work as expected.
+
 ## Usage
 
 ```yaml
@@ -58,6 +60,19 @@ The types of artifacts to build. Can be any type supported by
 
 The default will change depending on the image used.
 
+### `aws-ami-name` (optional)
+
+The name of the AMI to create. Only used when `aws` is in `types`.
+
+### `aws-region` (optional)
+
+The region to create the AMI in. Only used when `aws` is in `types`.
+
+### `aws-bucket` (optional)
+
+The name of the S3 bucket to upload the AMI to. Only used when `aws` is in
+`types`.
+
 ## Outputs
 
 ### `output-directory`
@@ -76,6 +91,10 @@ Example:
   {
     "type": "qcow2",
     "path": "/path/to/artifact.qcow2"
+  },
+  {
+    "type": "raw",
+    "path": "/path/to/artifact.raw"
   }
 ]
 ```

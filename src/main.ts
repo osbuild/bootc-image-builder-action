@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { build } from './bib.js'
+import { AWSOptions, build } from './bib.js'
 
 /**
  * The main function for the action.
@@ -17,6 +17,13 @@ export async function run(): Promise<void> {
       core.getInput('tls-verify').toLowerCase() === 'true'
     const types: Array<string> = core.getInput('types').split(/[\s,]+/) // Split on whitespace or commas
 
+    // AWS-specific options
+    const awsOptions: AWSOptions = {
+      AMIName: core.getInput('aws-ami-name'),
+      BucketName: core.getInput('aws-bucket'),
+      Region: core.getInput('aws-region')
+    }
+
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`Building image ${image} using config file ${configFilePath}`)
 
@@ -28,7 +35,8 @@ export async function run(): Promise<void> {
       chown,
       rootfs,
       tlsVerify,
-      types
+      types,
+      awsOptions
     })
 
     // Set outputs for other workflow steps to use

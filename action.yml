@@ -28,14 +28,25 @@ inputs:
     description: 'The types of images to generate'
     required: false
 
-# Define your outputs here.
+  # AMI-specific inputs
+  aws-bucket:
+    description: 'The AWS S3 bucket to temporarily store the AWS AMI image to'
+    required: false
+  aws-ami-name:
+    description: 'The name of the AWS AMI image'
+    required: false
+  aws-region:
+    description: 'The AWS region to make the AWS AMI image available in'
+    required: false
+
 outputs:
   output-directory:
     description: 'The directory where the generated artifacts are stored'
   output-paths:
     description:
       'A JSON array of the artifact types to the generated disk images or
-      ISOs.  Each object in the array has the following keys: type and path'
+      ISOs.  AWS AMIs will not be included in this output.  Each object in the
+      array has the following keys: type and path'
   manifest-path:
     description: 'The path to the manifest file'
 
