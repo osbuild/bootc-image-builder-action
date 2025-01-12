@@ -178,24 +178,11 @@ function extractArtifactTypes(files: Dirent[]): Map<string, OutputArtifact> {
 
       // Get the type from the path.
       // E.g. ./output/bootiso/boot.iso -> bootiso
-      let type = file.parentPath.split('/').pop()
+      const type = file.parentPath.split('/').pop()
       if (!type) {
         throw new Error(
           `Failed to extract type from artifact path: ${file.parentPath}`
         )
-      }
-
-      // Support overwriting the type since the output path may not match the type.
-      // E.G. bootiso -> iso, image -> raw, vhd -> vpc
-      const overwrites = new Map([
-        ['bootiso', 'iso'],
-        ['image', 'raw'],
-        ['vhd', 'vpc']
-      ])
-      const overwrite = overwrites.get(type)
-      if (overwrite) {
-        core.debug(`Overwriting type ${type} with ${overwrite}`)
-        type = overwrite
       }
 
       const pathRelative = `${file.parentPath}/${file.name}`
