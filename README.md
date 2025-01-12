@@ -4,6 +4,14 @@ GitHub Action for building ISOs and disk images for Bootable Containers.
 
 AWS support is currently untested and may not work as expected.
 
+## Scope
+
+This action is intended to be as close to a 1:1 mapping of the
+`bootc-image-builder` tool as possible. It is not interested in providing
+additional features or functionality beyond what is provided by the
+`bootc-image-builder` tool, and therefore these features should be implemented
+in the `bootc-image-builder` tool itself.
+
 ## Usage
 
 ```yaml

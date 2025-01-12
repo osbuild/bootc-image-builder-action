@@ -27251,7 +27251,7 @@ async function execAsRoot(executable, args) {
         args.unshift(executable);
         executable = 'sudo';
     }
-    await execExports.exec(executable, args);
+    return await execExports.getExecOutput(executable, args);
 }
 async function createDirectory(directory) {
     try {
@@ -27342,7 +27342,6 @@ async function build(options) {
         // Get the *.json manifest file from the output directory using fs
         const manifestPath = artifacts.find((file) => file.isFile() && file.name.endsWith('.json'))?.name;
         // Create a list of <type>:<path> output paths for each type.
-        // Some paths may need to be overwritten to match the expected type (e.g. bootiso -> iso)
         const outputArtifacts = await extractArtifactTypes(artifacts);
         return {
             manifestPath: `${outputDirectory}/${manifestPath}`,
@@ -27355,7 +27354,7 @@ async function build(options) {
         return {
             manifestPath: '',
             outputDirectory: '',
-            outputArtifacts: []
+            outputArtifacts: new Map()
         };
     }
 }
@@ -27384,15 +27383,39 @@ function extractArtifactTypes(files) {
         }
         // Get the type from the path.
         // E.g. ./output/bootiso/boot.iso -> bootiso
-        const type = file.parentPath.split('/').pop();
+        let type = file.parentPath.split('/').pop();
         if (!type) {
             throw new Error(`Failed to extract type from artifact path: ${file.parentPath}`);
+        }
+        // Support overwriting the type since the output path may not match the type.
+        // E.G. bootiso -> iso, image -> raw, vhd -> vpc
+        const overwrites = new Map([
+            ['bootiso', 'iso'],
+            ['image', 'raw'],
+            ['vhd', 'vpc']
+        ]);
+        const overwrite = overwrites.get(type);
+        if (overwrite) {
+            coreExports.debug(`Overwriting type ${type} with ${overwrite}`);
+            type = overwrite;
         }
         const pathRelative = `${file.parentPath}/${file.name}`;
         const pathAbsolute = require$$1$5.resolve(pathRelative);
         return { type, path: pathAbsolute };
     });
-    return outputArtifacts;
+    // Create a Map where the key is the type and the value is the OutputArtifact
+    const artifactMap = new Map();
+    outputArtifacts.forEach((artifact) => {
+        if (artifactMap.has(artifact.type)) {
+            coreExports.debug(`Type "${artifact.type}" already exists in the map. Skipping.`);
+            // Optionally, you could update or replace the existing artifact here.
+            // For example, you can decide to keep the first encountered artifact for each type.
+        }
+        else {
+            artifactMap.set(artifact.type, artifact);
+        }
+    });
+    return artifactMap;
 }
 async function githubActionsWorkaroundFixes() {
     coreExports.debug('Configuring Podman storage (see https://github.com/osbuild/bootc-image-builder/issues/446)');
@@ -27438,7 +27461,7 @@ async function run() {
         // Set outputs for other workflow steps to use
         coreExports.setOutput('manifest-path', buildOutput.manifestPath);
         coreExports.setOutput('output-directory', buildOutput.outputDirectory);
-        coreExports.setOutput('output-paths', JSON.stringify(buildOutput.outputArtifacts));
+        coreExports.setOutput('output-paths', JSON.stringify(Object.fromEntries(buildOutput.outputArtifacts.entries())));
     }
     catch (error) {
         // Fail the workflow run if an error occurs

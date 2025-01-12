@@ -98,14 +98,14 @@ jobs:
           echo "Output Paths: $OUTPUT_PATHS_JSON"
 
           file ${{ steps.action.outputs.manifest-path }}
-          for OUTPUT in $(echo "$OUTPUT_PATHS_JSON" | jq -rc ".[]"); do
-            ARTIFACT_TYPE=$(echo "$OUTPUT" | jq -r ".type")
-            echo "Detected Type: $ARTIFACT_TYPE"
-            ARTIFACT_PATH=$(echo "$OUTPUT" | jq -r ".path")
-            echo "Detected Path: $ARTIFACT_PATH"
-            echo "Type: $ARTIFACT_TYPE, Path: $ARTIFACT_PATH"
 
-            file "$ARTIFACT_PATH"
+          # For each key in the JSON map, output the type (key) and path
+          for OUTPUT in $(echo "$OUTPUT_PATHS_JSON" | jq -r 'keys[]'); do
+            OUTPUT_TYPE=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".$OUTPUT.type")
+            OUTPUT_PATH=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".$OUTPUT.path")
+
+            echo "Output Type: $OUTPUT_TYPE"
+            file "$OUTPUT_PATH"
           done
 
       - name: Upload Outputs

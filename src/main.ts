@@ -42,7 +42,10 @@ export async function run(): Promise<void> {
     // Set outputs for other workflow steps to use
     core.setOutput('manifest-path', buildOutput.manifestPath)
     core.setOutput('output-directory', buildOutput.outputDirectory)
-    core.setOutput('output-paths', JSON.stringify(buildOutput.outputArtifacts))
+    core.setOutput(
+      'output-paths',
+      JSON.stringify(Object.fromEntries(buildOutput.outputArtifacts.entries()))
+    )
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)

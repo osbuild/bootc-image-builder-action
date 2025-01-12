@@ -9,14 +9,21 @@ export async function isRootUser(): Promise<boolean> {
 export async function execAsRoot(
   executable: string,
   args: string[]
-): Promise<void> {
+): Promise<exec.ExecOutput> {
   const isRoot = await isRootUser()
   if (!isRoot) {
     args.unshift(executable)
     executable = 'sudo'
   }
 
-  await exec.exec(executable, args)
+  return await exec.getExecOutput(executable, args)
+}
+
+export async function execAsUser(
+  executable: string,
+  args: string[]
+): Promise<exec.ExecOutput> {
+  return await exec.getExecOutput(executable, args)
 }
 
 export async function createDirectory(directory: string): Promise<void> {
@@ -50,5 +57,18 @@ export async function writeToFile(file: string, data: Buffer): Promise<void> {
     core.setFailed(
       `Failed to write to file ${file}: ${(error as Error).message}`
     )
+  }
+}
+
+export async function readFromFile(file: string): Promise<Buffer> {
+  try {
+    const data = Buffer.alloc(0)
+    await execAsRoot('sh', ['-c', `cat ${file} > ${data}`])
+    return data
+  } catch (error) {
+    core.setFailed(
+      `Failed to read from file ${file}: ${(error as Error).message}`
+    )
+    return Buffer.alloc(0)
   }
 }

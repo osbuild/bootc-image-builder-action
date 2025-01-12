@@ -11,7 +11,7 @@ export interface BootcImageBuilderOptions {
 export interface BootcImageBuilderOutputs {
     manifestPath: string;
     outputDirectory: string;
-    outputArtifacts: OutputArtifact[];
+    outputArtifacts: Map<string, OutputArtifact>;
 }
 export interface AWSOptions {
     AMIName: string;

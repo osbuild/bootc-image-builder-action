@@ -23,7 +23,7 @@ export interface BootcImageBuilderOptions {
 export interface BootcImageBuilderOutputs {
   manifestPath: string
   outputDirectory: string
-  outputArtifacts: OutputArtifact[]
+  outputArtifacts: Map<string, OutputArtifact>
 }
 
 export interface AWSOptions {
@@ -125,7 +125,6 @@ export async function build(
     )?.name
 
     // Create a list of <type>:<path> output paths for each type.
-    // Some paths may need to be overwritten to match the expected type (e.g. bootiso -> iso)
     const outputArtifacts = await extractArtifactTypes(artifacts)
 
     return {
@@ -139,7 +138,7 @@ export async function build(
     return {
       manifestPath: '',
       outputDirectory: '',
-      outputArtifacts: []
+      outputArtifacts: new Map()
     }
   }
 }
@@ -159,7 +158,7 @@ async function pullImage(image: string, tlsVerify?: boolean): Promise<void> {
 
 // Return a map of strings to strings, where the key is the type (evaluated from the path) and the value is the path.
 // E.G. ./output/bootiso/boot.iso -> { bootiso: ./output/bootiso/boot.iso }
-function extractArtifactTypes(files: Dirent[]): Array<OutputArtifact> {
+function extractArtifactTypes(files: Dirent[]): Map<string, OutputArtifact> {
   core.debug(
     `Extracting artifact types from artifact paths: ${JSON.stringify(files)}`
   )
@@ -179,11 +178,24 @@ function extractArtifactTypes(files: Dirent[]): Array<OutputArtifact> {
 
       // Get the type from the path.
       // E.g. ./output/bootiso/boot.iso -> bootiso
-      const type = file.parentPath.split('/').pop()
+      let type = file.parentPath.split('/').pop()
       if (!type) {
         throw new Error(
           `Failed to extract type from artifact path: ${file.parentPath}`
         )
+      }
+
+      // Support overwriting the type since the output path may not match the type.
+      // E.G. bootiso -> iso, image -> raw, vhd -> vpc
+      const overwrites = new Map([
+        ['bootiso', 'iso'],
+        ['image', 'raw'],
+        ['vhd', 'vpc']
+      ])
+      const overwrite = overwrites.get(type)
+      if (overwrite) {
+        core.debug(`Overwriting type ${type} with ${overwrite}`)
+        type = overwrite
       }
 
       const pathRelative = `${file.parentPath}/${file.name}`
@@ -192,7 +204,20 @@ function extractArtifactTypes(files: Dirent[]): Array<OutputArtifact> {
       return { type, path: pathAbsolute }
     })
 
-  return outputArtifacts
+  // Create a Map where the key is the type and the value is the OutputArtifact
+  const artifactMap = new Map<string, OutputArtifact>()
+
+  outputArtifacts.forEach((artifact) => {
+    if (artifactMap.has(artifact.type)) {
+      core.debug(`Type "${artifact.type}" already exists in the map. Skipping.`)
+      // Optionally, you could update or replace the existing artifact here.
+      // For example, you can decide to keep the first encountered artifact for each type.
+    } else {
+      artifactMap.set(artifact.type, artifact)
+    }
+  })
+
+  return artifactMap
 }
 
 async function githubActionsWorkaroundFixes(): Promise<void> {
