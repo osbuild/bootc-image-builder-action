@@ -1,4 +1,4 @@
-# @bootc-workstation/bootc-image-builder-action
+# @bootc-warehouse/bootc-image-builder-action
 
 GitHub Action for building ISOs and disk images for Bootable Containers.
 
@@ -9,7 +9,7 @@ AWS support is currently untested and may not work as expected.
 ```yaml
 - name: Build ISO
   id: build-iso
-  uses: bootc-workstation/bootc-image-builder-action@vX.Y.Z
+  uses: bootc-warehouse/bootc-image-builder-action@vX.Y.Z
   with:
     config-file: ./iso-config.toml
     image: quay.io/fedora/fedora-silverblue:latest
