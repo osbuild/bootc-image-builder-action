@@ -52,6 +52,26 @@ outputs:
       array has the following keys: type and path'
   manifest-path:
     description: 'The path to the manifest file'
+  qcow2-output-path:
+    description:
+      'The path to the qcow2 disk image. If the artifact type was not requested,
+      this will be an empty string.'
+  vmdk-output-path:
+    description:
+      'The path to the vmdk disk image. If the artifact type was not requested,
+      this will be an empty string.'
+  iso-output-path:
+    description:
+      'The path to the ISO image. If the artifact type was not requested, this
+      will be an empty string.'
+  raw-output-path:
+    description:
+      'The path to the raw disk image. If the artifact type was not requested,
+      this will be an empty string.'
+  vhd-output-path:
+    description:
+      'The path to the VHD artifact. If the artifact type was not requested,
+      this will be an empty string.'
 
 runs:
   using: node20

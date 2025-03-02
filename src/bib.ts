@@ -104,7 +104,7 @@ export async function build(
 
     // The builder image and BIB image must be the last arguments of each command
     podmanArgs.push(options.builderImage)
-    bibArgs.push(`--local ${options.image}`)
+    bibArgs.push(options.image)
 
     core.startGroup('Building artifact(s)')
     await execAsRoot(
@@ -127,7 +127,7 @@ export async function build(
     )?.name
 
     // Create a list of <type>:<path> output paths for each type.
-    const outputArtifacts = await extractArtifactTypes(artifacts)
+    const outputArtifacts = extractArtifactTypes(artifacts)
 
     return {
       manifestPath: `${outputDirectory}/${manifestPath}`,
@@ -180,11 +180,34 @@ function extractArtifactTypes(files: Dirent[]): Map<string, OutputArtifact> {
 
       // Get the type from the path.
       // E.g. ./output/bootiso/boot.iso -> bootiso
-      const type = file.parentPath.split('/').pop()
+      let type = file.parentPath.split('/').pop()
       if (!type) {
         throw new Error(
           `Failed to extract type from artifact path: ${file.parentPath}`
         )
+      }
+
+      // Convert the types to the inputs - https://github.com/osbuild/bootc-image-builder/issues/793
+      //Output Paths: {
+      //   "vpc":{"type":"vpc", "path":"/home/runner/work/.../output/vpc/disk.vhd"},
+      //   "vmdk":{"type":"vmdk","path":"/home/runner/work/.../output/vmdk/disk.vmdk"},
+      //   "qcow2":{"type":"qcow2","path":"/home/runner/work/.../output/qcow2/disk.qcow2"},
+      //   "image":{"type":"image","path":"/home/runner/work/.../output/image/disk.raw"},
+      //   "iso":{"type":"iso","path":"/home/runner/work/.../output/bootiso/install.iso"}
+      // }
+
+      switch (type) {
+        case 'bootiso':
+          type = 'iso'
+          break
+        case 'vpc':
+          type = 'vhd'
+          break
+        case 'image':
+          type = 'raw'
+          break
+        default:
+          break
       }
 
       const pathRelative = `${file.parentPath}/${file.name}`

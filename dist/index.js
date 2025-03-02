@@ -27328,7 +27328,7 @@ async function build(options) {
         }
         // The builder image and BIB image must be the last arguments of each command
         podmanArgs.push(options.builderImage);
-        bibArgs.push(`--local ${options.image}`);
+        bibArgs.push(options.image);
         coreExports.startGroup('Building artifact(s)');
         await execAsRoot(executible, [...podmanArgs, ...bibArgs]
             .filter((arg) => arg)
@@ -27343,7 +27343,7 @@ async function build(options) {
         // Get the *.json manifest file from the output directory using fs
         const manifestPath = artifacts.find((file) => file.isFile() && file.name.endsWith('.json'))?.name;
         // Create a list of <type>:<path> output paths for each type.
-        const outputArtifacts = await extractArtifactTypes(artifacts);
+        const outputArtifacts = extractArtifactTypes(artifacts);
         return {
             manifestPath: `${outputDirectory}/${manifestPath}`,
             outputDirectory,
@@ -27384,9 +27384,28 @@ function extractArtifactTypes(files) {
         }
         // Get the type from the path.
         // E.g. ./output/bootiso/boot.iso -> bootiso
-        const type = file.parentPath.split('/').pop();
+        let type = file.parentPath.split('/').pop();
         if (!type) {
             throw new Error(`Failed to extract type from artifact path: ${file.parentPath}`);
+        }
+        // Convert the types to the inputs - https://github.com/osbuild/bootc-image-builder/issues/793
+        //Output Paths: {
+        //   "vpc":{"type":"vpc", "path":"/home/runner/work/.../output/vpc/disk.vhd"},
+        //   "vmdk":{"type":"vmdk","path":"/home/runner/work/.../output/vmdk/disk.vmdk"},
+        //   "qcow2":{"type":"qcow2","path":"/home/runner/work/.../output/qcow2/disk.qcow2"},
+        //   "image":{"type":"image","path":"/home/runner/work/.../output/image/disk.raw"},
+        //   "iso":{"type":"iso","path":"/home/runner/work/.../output/bootiso/install.iso"}
+        // }
+        switch (type) {
+            case 'bootiso':
+                type = 'iso';
+                break;
+            case 'vpc':
+                type = 'vhd';
+                break;
+            case 'image':
+                type = 'raw';
+                break;
         }
         const pathRelative = `${file.parentPath}/${file.name}`;
         const pathAbsolute = require$$1$5.resolve(pathRelative);
@@ -27424,6 +27443,7 @@ async function run() {
         const configFilePath = coreExports.getInput('config-file');
         const image = coreExports.getInput('image');
         const builderImage = coreExports.getInput('builder-image');
+        const additionalArgs = coreExports.getInput('additional-args');
         const chown = coreExports.getInput('chown');
         const rootfs = coreExports.getInput('rootfs');
         const tlsVerify = coreExports.getInput('tls-verify').toLowerCase() === 'true';
@@ -27441,6 +27461,7 @@ async function run() {
             configFilePath,
             image,
             builderImage,
+            additionalArgs,
             chown,
             rootfs,
             tlsVerify,
@@ -27451,11 +27472,18 @@ async function run() {
         coreExports.setOutput('manifest-path', buildOutput.manifestPath);
         coreExports.setOutput('output-directory', buildOutput.outputDirectory);
         coreExports.setOutput('output-paths', JSON.stringify(Object.fromEntries(buildOutput.outputArtifacts.entries())));
+        setArtifactSpecificOutputs(buildOutput.outputArtifacts);
     }
     catch (error) {
         // Fail the workflow run if an error occurs
         if (error instanceof Error)
             coreExports.setFailed(error.message);
+    }
+}
+function setArtifactSpecificOutputs(outputArtifacts) {
+    for (const [type, path] of outputArtifacts.entries()) {
+        coreExports.debug(`Setting output path for ${type} to ${path}`);
+        coreExports.setOutput(`${type}-output-path`, path);
     }
 }
 

@@ -118,6 +118,31 @@ Example (prettified):
 
 The path to the manifest file used to build the artifacts.
 
+### `qcow2-output-path`
+
+The path to the qcow2 artifact. If the artifact type was not requested, this
+will be an empty string.
+
+### `vmdk-output-path`
+
+The path to the VMDK artifact. If the artifact type was not requested, this will
+be an empty string.
+
+### `iso-output-path`
+
+The path to the ISO artifact. If the artifact type was not requested, this will
+be an empty string.
+
+### `raw-output-path`
+
+The path to the raw artifact. If the artifact type was not requested, this will
+be an empty string.
+
+### `vhd-output-path`
+
+The path to the VHD artifact. If the artifact type was not requested, this will
+be an empty string.
+
 ## License
 
 This project is licensed under the Apache License, Version 2.0 - see the

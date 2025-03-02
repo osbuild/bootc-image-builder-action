@@ -55,13 +55,18 @@ jobs:
       fail-fast: false
       matrix:
         types:
-          - 'raw qcow2'
-          - 'iso'
+          - raw qcow2 vmdk vhd
+          - iso
 
     steps:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
+
+      - name: Maximize Build Space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+        with:
+          remove-codeql: true
 
       - name: Get Runner Information
         id: runner-info
@@ -83,16 +88,25 @@ jobs:
         uses: ./
         with:
           config-file: ./__fixtures__/config.toml
-          image: ghcr.io/centos-workstation/achillobator:latest
+          image: ghcr.io/ublue-os/bluefin:lts
+          builder-image: ghcr.io/centos-workstation/bootc-image-builder:latest
           chown:
             ${{ steps.runner-info.outputs.USER_UID }}:${{
             steps.runner-info.outputs.USER_GID }}
           types: ${{ matrix.types }}
+          additional-args: --use-librepo=True
 
       - name: List Outputs
         env:
           OUTPUT_PATHS_JSON: ${{ steps.action.outputs.output-paths }}
+          QCOW2_OUTPUT_PATH: ${{ steps.action.outputs.qcow2-output-path }}
+          VMDK_OUTPUT_PATH: ${{ steps.action.outputs.vmdk-output-path }}
+          ISO_OUTPUT_PATH: ${{ steps.action.outputs.iso-output-path }}
+          RAW_OUTPUT_PATH: ${{ steps.action.outputs.raw-output-path }}
+          VHD_OUTPUT_PATH: ${{ steps.action.outputs.vhd-output-path }}
         run: |
+          set -x
+
           echo "Output Directory: ${{ steps.action.outputs.output-directory }}"
           echo "Manifest Path: ${{ steps.action.outputs.manifest-path }}"
           echo "Output Paths: $OUTPUT_PATHS_JSON"
@@ -107,6 +121,21 @@ jobs:
             echo "Output Type: $OUTPUT_TYPE"
             file "$OUTPUT_PATH"
           done
+
+          echo "QCOW2 Output Path: $QCOW2_OUTPUT_PATH"
+          file "$QCOW2_OUTPUT_PATH"
+
+          echo "VMDK Output Path: $VMDK_OUTPUT_PATH"
+          file "$VMDK_OUTPUT_PATH"
+
+          echo "ISO Output Path: $ISO_OUTPUT_PATH"
+          file "$ISO_OUTPUT_PATH"
+
+          echo "RAW Output Path: $RAW_OUTPUT_PATH"
+          file "$RAW_OUTPUT_PATH"
+
+          echo "VHD Output Path: $VHD_OUTPUT_PATH"
+          file "$VHD_OUTPUT_PATH"
 
       - name: Upload Outputs
         uses: actions/upload-artifact@v4
