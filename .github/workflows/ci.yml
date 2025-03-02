@@ -51,12 +51,12 @@ jobs:
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-24.04
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     types:
-    #       - raw qcow2 vmdk vhd
-    #       - anaconda-iso
+    strategy:
+      fail-fast: false
+      matrix:
+        types:
+          - raw qcow2 vmdk vhd
+          - anaconda-iso
 
     steps:
       - name: Checkout
@@ -93,9 +93,7 @@ jobs:
           chown:
             ${{ steps.runner-info.outputs.USER_UID }}:${{
             steps.runner-info.outputs.USER_GID }}
-          types: |
-            raw
-            qcow2
+          types: ${{ matrix.types }}
           additional-args: --use-librepo=True
 
       - name: List Outputs
@@ -167,6 +165,6 @@ jobs:
       - name: Upload Outputs
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-test
+          name: test-results-${{ steps.runner-info.outputs.TYPES }}
           path: ${{ steps.action.outputs.output-directory }}
           if-no-files-found: error
