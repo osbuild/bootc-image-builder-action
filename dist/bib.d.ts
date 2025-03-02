@@ -22,5 +22,6 @@ export interface AWSOptions {
 export interface OutputArtifact {
     type: string;
     path: string;
+    checksum?: string;
 }
 export declare function build(options: BootcImageBuilderOptions): Promise<BootcImageBuilderOutputs>;
