@@ -27310,6 +27310,7 @@ async function build(options) {
         bibArgs.push(options.tlsVerify ? '' : '--tls-verify false');
         bibArgs.push(options.chown ? `--chown ${options.chown}` : '');
         bibArgs.push(options.rootfs ? `--rootfs ${options.rootfs}` : '');
+        bibArgs.push(options.additionalArgs ? options.additionalArgs : '');
         let bibTypeArgs = [];
         if (options.types && options.types.length > 0) {
             bibTypeArgs = options.types

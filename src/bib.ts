@@ -13,6 +13,7 @@ export interface BootcImageBuilderOptions {
   configFilePath: string
   image: string
   builderImage: string
+  additionalArgs?: string
   chown?: string
   rootfs?: string
   tlsVerify: boolean
@@ -79,6 +80,7 @@ export async function build(
     bibArgs.push(options.tlsVerify ? '' : '--tls-verify false')
     bibArgs.push(options.chown ? `--chown ${options.chown}` : '')
     bibArgs.push(options.rootfs ? `--rootfs ${options.rootfs}` : '')
+    bibArgs.push(options.additionalArgs ? options.additionalArgs : '')
 
     let bibTypeArgs: string[] = []
     if (options.types && options.types.length > 0) {

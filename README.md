@@ -21,9 +21,10 @@ in the `bootc-image-builder` tool itself.
   with:
     config-file: ./iso-config.toml
     image: quay.io/fedora/fedora-silverblue:latest
-    types: iso
+    types: |
+      iso
 
-- name: Upload ISO
+- name: Upload Artifact
   uses: actions/upload-artifact@v4
   with:
     name: iso
@@ -46,6 +47,12 @@ The image to use for building the ISO.
 The image to use for building the ISO.
 
 Default: `quay.io/centos-bootc/bootc-image-builder:latest`
+
+### `additional-args` (optional)
+
+Additional arguments to pass to the `bootc-image-builder` tool. This can be used
+to enable experimental features or to pass additional arguments to the
+`bootc-image-builder` tool.
 
 ### `chown` (optional)
 
@@ -92,7 +99,7 @@ subdirectories based on the type of artifact.
 
 A JSON array of the paths to the built artifacts.
 
-Example:
+Example (prettified):
 
 ```json
 [

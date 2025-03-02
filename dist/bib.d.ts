@@ -2,6 +2,7 @@ export interface BootcImageBuilderOptions {
     configFilePath: string;
     image: string;
     builderImage: string;
+    additionalArgs?: string;
     chown?: string;
     rootfs?: string;
     tlsVerify: boolean;
