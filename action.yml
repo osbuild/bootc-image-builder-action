@@ -56,21 +56,41 @@ outputs:
     description:
       'The path to the qcow2 disk image. If the artifact type was not requested,
       this will be an empty string.'
+  qcow2-output-checksum:
+    description:
+      'The checksum of the qcow2 disk image. If the artifact type was not
+      requested, this will be an empty string.'
   vmdk-output-path:
     description:
       'The path to the vmdk disk image. If the artifact type was not requested,
       this will be an empty string.'
-  iso-output-path:
+  vmdk-output-checksum:
     description:
-      'The path to the ISO image. If the artifact type was not requested, this
-      will be an empty string.'
+      'The checksum of the vmdk disk image. If the artifact type was not
+      requested, this will be an empty string.'
+  anaconda-iso-output-path:
+    description:
+      'The path to the Anaconda ISO image. If the artifact type was not
+      requested, this will be an empty string.'
+  anaconda-iso-output-checksum:
+    description:
+      'The checksum of the Anaconda ISO image. If the artifact type was not
+      requested, this will be an empty string.'
   raw-output-path:
     description:
       'The path to the raw disk image. If the artifact type was not requested,
       this will be an empty string.'
+  raw-output-checksum:
+    description:
+      'The checksum of the raw disk image. If the artifact type was not
+      requested, this will be an empty string.'
   vhd-output-path:
     description:
       'The path to the VHD artifact. If the artifact type was not requested,
+      this will be an empty string.'
+  vhd-output-checksum:
+    description:
+      'The checksum of the VHD artifact. If the artifact type was not requested,
       this will be an empty string.'
 
 runs:

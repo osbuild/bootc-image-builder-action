@@ -56,7 +56,7 @@ jobs:
       matrix:
         types:
           - raw qcow2 vmdk vhd
-          - iso
+          - anaconda-iso
 
     steps:
       - name: Checkout
@@ -101,7 +101,8 @@ jobs:
           OUTPUT_PATHS_JSON: ${{ steps.action.outputs.output-paths }}
           QCOW2_OUTPUT_PATH: ${{ steps.action.outputs.qcow2-output-path }}
           VMDK_OUTPUT_PATH: ${{ steps.action.outputs.vmdk-output-path }}
-          ISO_OUTPUT_PATH: ${{ steps.action.outputs.iso-output-path }}
+          ANACONDA_ISO_OUTPUT_PATH:
+            ${{ steps.action.outputs.anaconda-iso-output-path }}
           RAW_OUTPUT_PATH: ${{ steps.action.outputs.raw-output-path }}
           VHD_OUTPUT_PATH: ${{ steps.action.outputs.vhd-output-path }}
         run: |
@@ -117,25 +118,34 @@ jobs:
           for OUTPUT in $(echo "$OUTPUT_PATHS_JSON" | jq -r 'keys[]'); do
             OUTPUT_TYPE=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".$OUTPUT.type")
             OUTPUT_PATH=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".$OUTPUT.path")
+            OUTPUT_CHECKSUM=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".$OUTPUT.checksum")
 
             echo "Output Type: $OUTPUT_TYPE"
             file "$OUTPUT_PATH"
+            if [ "$OUTPUT_CHECKSUM" != "$(sha256sum "$OUTPUT_PATH" | cut -d ' ' -f 1)" ]; then
+              echo "Checksums do not match"
+            fi
           done
 
           echo "QCOW2 Output Path: $QCOW2_OUTPUT_PATH"
           file "$QCOW2_OUTPUT_PATH"
+          sha256sum "$QCOW2_OUTPUT_PATH"
 
           echo "VMDK Output Path: $VMDK_OUTPUT_PATH"
           file "$VMDK_OUTPUT_PATH"
+          sha256sum "$VMDK_OUTPUT_PATH"
 
-          echo "ISO Output Path: $ISO_OUTPUT_PATH"
-          file "$ISO_OUTPUT_PATH"
+          echo "Anaconda ISO Output Path: $ANACONDA_ISO_OUTPUT_PATH"
+          file "$ANACONDA_ISO_OUTPUT_PATH"
+          sha256sum "$ANACONDA_ISO_OUTPUT_PATH"
 
           echo "RAW Output Path: $RAW_OUTPUT_PATH"
           file "$RAW_OUTPUT_PATH"
+          sha256sum "$RAW_OUTPUT_PATH"
 
           echo "VHD Output Path: $VHD_OUTPUT_PATH"
           file "$VHD_OUTPUT_PATH"
+          sha256sum "$VHD_OUTPUT_PATH"
 
       - name: Upload Outputs
         uses: actions/upload-artifact@v4

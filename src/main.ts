@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
-import { AWSOptions, build, OutputArtifact } from './bib.js'
+import { build } from './bib.js'
+import { AWSOptions, OutputArtifact } from './types.js'
 
 /**
  * The main function for the action.
@@ -59,7 +60,10 @@ function setArtifactSpecificOutputs(
   outputArtifacts: Map<string, OutputArtifact>
 ): void {
   for (const [type, artifact] of outputArtifacts.entries()) {
-    core.debug(`Setting output path for ${type} to ${artifact.path}`)
+    core.debug(
+      `Setting output path for ${type} to ${artifact.path} with checksum ${artifact.checksum}`
+    )
     core.setOutput(`${type}-output-path`, artifact.path)
+    core.setOutput(`${type}-output-checksum`, artifact.checksum)
   }
 }

@@ -27281,6 +27281,25 @@ async function writeToFile(file, data) {
         coreExports.setFailed(`Failed to write to file ${file}: ${error.message}`);
     }
 }
+// Calculate the checksum asynchronously
+function generateChecksum(filePath, checksumType) {
+    switch (checksumType) {
+        case 'sha256':
+            return generateSHA256Checksum(filePath);
+        default:
+            return Promise.reject(new Error(`Unknown checksum type: ${checksumType}`));
+    }
+}
+// Generate SHA256 checksum asynchronously
+function generateSHA256Checksum(filePath) {
+    return new Promise((resolve, reject) => {
+        const hash = require$$0$1.createHash('sha256');
+        const stream = createReadStream(filePath);
+        stream.on('data', (chunk) => hash.update(chunk));
+        stream.on('error', (err) => reject(`Failed to generate checksum: ${err.message}`));
+        stream.on('end', () => resolve(hash.digest('hex')));
+    });
+}
 
 async function build(options) {
     try {
@@ -27389,7 +27408,7 @@ async function extractArtifactTypes(files) {
         // Convert types
         switch (type) {
             case 'bootiso':
-                type = 'iso';
+                type = 'anaconda-iso';
                 break;
             case 'vpc':
                 type = 'vhd';
@@ -27415,25 +27434,6 @@ async function extractArtifactTypes(files) {
         }
     });
     return artifactMap;
-}
-// Calculate the checksum asynchronously
-function generateChecksum(filePath, checksumType) {
-    switch (checksumType) {
-        case 'sha256':
-            return generateSHA256Checksum(filePath);
-        default:
-            return Promise.reject(new Error(`Unknown checksum type: ${checksumType}`));
-    }
-}
-// Generate SHA256 checksum asynchronously
-function generateSHA256Checksum(filePath) {
-    return new Promise((resolve, reject) => {
-        const hash = require$$0$1.createHash('sha256');
-        const stream = createReadStream(filePath);
-        stream.on('data', (chunk) => hash.update(chunk));
-        stream.on('error', (err) => reject(`Failed to generate checksum: ${err.message}`));
-        stream.on('end', () => resolve(hash.digest('hex')));
-    });
 }
 // Fix for GitHub Actions Podman integration issues
 async function githubActionsWorkaroundFixes() {
@@ -27493,8 +27493,9 @@ async function run() {
 }
 function setArtifactSpecificOutputs(outputArtifacts) {
     for (const [type, artifact] of outputArtifacts.entries()) {
-        coreExports.debug(`Setting output path for ${type} to ${artifact.path}`);
+        coreExports.debug(`Setting output path for ${type} to ${artifact.path} with checksum ${artifact.checksum}`);
         coreExports.setOutput(`${type}-output-path`, artifact.path);
+        coreExports.setOutput(`${type}-output-checksum`, artifact.checksum);
     }
 }
 

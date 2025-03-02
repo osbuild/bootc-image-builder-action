@@ -123,25 +123,50 @@ The path to the manifest file used to build the artifacts.
 The path to the qcow2 artifact. If the artifact type was not requested, this
 will be an empty string.
 
+### `qcow2-output-checksum`
+
+The checksum of the qcow2 artifact. If the artifact type was not requested, this
+will be an empty string.
+
 ### `vmdk-output-path`
 
 The path to the VMDK artifact. If the artifact type was not requested, this will
 be an empty string.
 
-### `iso-output-path`
+### `vmdk-output-checksum`
 
-The path to the ISO artifact. If the artifact type was not requested, this will
-be an empty string.
+The checksum of the VMDK artifact. If the artifact type was not requested, this
+will be an empty string.
+
+### `anaconda-iso-output-path`
+
+The path to the Anaconda ISO artifact. If the artifact type was not requested,
+this will be an empty string.
+
+### `anaconda-iso-output-checksum`
+
+The checksum of the Anaconda ISO artifact. If the artifact type was not
+requested, this will be an empty string.
 
 ### `raw-output-path`
 
 The path to the raw artifact. If the artifact type was not requested, this will
 be an empty string.
 
+### `raw-output-checksum`
+
+The checksum of the raw artifact. If the artifact type was not requested, this
+will be an empty string.
+
 ### `vhd-output-path`
 
 The path to the VHD artifact. If the artifact type was not requested, this will
 be an empty string.
+
+### `vhd-output-checksum`
+
+The checksum of the VHD artifact. If the artifact type was not requested, this
+will be an empty string.
 
 ## License
 

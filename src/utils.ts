@@ -1,5 +1,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import crypto from 'crypto'
+import { createReadStream } from 'fs'
 import * as os from 'os'
 
 export async function isRootUser(): Promise<boolean> {
@@ -71,4 +73,31 @@ export async function readFromFile(file: string): Promise<Buffer> {
     )
     return Buffer.alloc(0)
   }
+}
+
+// Calculate the checksum asynchronously
+export function generateChecksum(
+  filePath: string,
+  checksumType: string
+): Promise<string> {
+  switch (checksumType) {
+    case 'sha256':
+      return generateSHA256Checksum(filePath)
+    default:
+      return Promise.reject(new Error(`Unknown checksum type: ${checksumType}`))
+  }
+}
+
+// Generate SHA256 checksum asynchronously
+export function generateSHA256Checksum(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256')
+    const stream = createReadStream(filePath)
+
+    stream.on('data', (chunk) => hash.update(chunk))
+    stream.on('error', (err) =>
+      reject(`Failed to generate checksum: ${err.message}`)
+    )
+    stream.on('end', () => resolve(hash.digest('hex')))
+  })
 }

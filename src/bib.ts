@@ -1,44 +1,19 @@
 import * as core from '@actions/core'
-import crypto from 'crypto'
-import { Dirent, createReadStream } from 'fs'
+import { Dirent } from 'fs'
 import * as fs from 'fs/promises'
 import path from 'path'
+import {
+  BootcImageBuilderOptions,
+  BootcImageBuilderOutputs,
+  OutputArtifact
+} from './types.js'
 import {
   createDirectory,
   deleteDirectory,
   execAsRoot,
+  generateChecksum,
   writeToFile
 } from './utils.js'
-
-export interface BootcImageBuilderOptions {
-  configFilePath: string
-  image: string
-  builderImage: string
-  additionalArgs?: string
-  chown?: string
-  rootfs?: string
-  tlsVerify: boolean
-  types?: Array<string>
-  awsOptions?: AWSOptions
-}
-
-export interface BootcImageBuilderOutputs {
-  manifestPath: string
-  outputDirectory: string
-  outputArtifacts: Map<string, OutputArtifact>
-}
-
-export interface AWSOptions {
-  AMIName: string
-  BucketName: string
-  Region?: string
-}
-
-export interface OutputArtifact {
-  type: string
-  path: string
-  checksum?: string // Checksum is optional since it might be computed later
-}
 
 export async function build(
   options: BootcImageBuilderOptions
@@ -192,7 +167,7 @@ async function extractArtifactTypes(
       // Convert types
       switch (type) {
         case 'bootiso':
-          type = 'iso'
+          type = 'anaconda-iso'
           break
         case 'vpc':
           type = 'vhd'
@@ -225,33 +200,6 @@ async function extractArtifactTypes(
   })
 
   return artifactMap
-}
-
-// Calculate the checksum asynchronously
-function generateChecksum(
-  filePath: string,
-  checksumType: string
-): Promise<string> {
-  switch (checksumType) {
-    case 'sha256':
-      return generateSHA256Checksum(filePath)
-    default:
-      return Promise.reject(new Error(`Unknown checksum type: ${checksumType}`))
-  }
-}
-
-// Generate SHA256 checksum asynchronously
-function generateSHA256Checksum(filePath: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const hash = crypto.createHash('sha256')
-    const stream = createReadStream(filePath)
-
-    stream.on('data', (chunk) => hash.update(chunk))
-    stream.on('error', (err) =>
-      reject(`Failed to generate checksum: ${err.message}`)
-    )
-    stream.on('end', () => resolve(hash.digest('hex')))
-  })
 }
 
 // Fix for GitHub Actions Podman integration issues
