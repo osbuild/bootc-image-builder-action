@@ -6,3 +6,5 @@ export declare function createDirectory(directory: string): Promise<void>;
 export declare function deleteDirectory(directory: string): Promise<void>;
 export declare function writeToFile(file: string, data: Buffer): Promise<void>;
 export declare function readFromFile(file: string): Promise<Buffer>;
+export declare function generateChecksum(filePath: string, checksumType: string): Promise<string>;
+export declare function generateSHA256Checksum(filePath: string): Promise<string>;

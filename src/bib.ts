@@ -3,39 +3,17 @@ import { Dirent } from 'fs'
 import * as fs from 'fs/promises'
 import path from 'path'
 import {
+  BootcImageBuilderOptions,
+  BootcImageBuilderOutputs,
+  OutputArtifact
+} from './types.js'
+import {
   createDirectory,
   deleteDirectory,
   execAsRoot,
+  generateChecksum,
   writeToFile
 } from './utils.js'
-
-export interface BootcImageBuilderOptions {
-  configFilePath: string
-  image: string
-  builderImage: string
-  chown?: string
-  rootfs?: string
-  tlsVerify: boolean
-  types?: Array<string>
-  awsOptions?: AWSOptions
-}
-
-export interface BootcImageBuilderOutputs {
-  manifestPath: string
-  outputDirectory: string
-  outputArtifacts: Map<string, OutputArtifact>
-}
-
-export interface AWSOptions {
-  AMIName: string
-  BucketName: string
-  Region?: string
-}
-
-export interface OutputArtifact {
-  type: string
-  path: string
-}
 
 export async function build(
   options: BootcImageBuilderOptions
@@ -79,6 +57,7 @@ export async function build(
     bibArgs.push(options.tlsVerify ? '' : '--tls-verify false')
     bibArgs.push(options.chown ? `--chown ${options.chown}` : '')
     bibArgs.push(options.rootfs ? `--rootfs ${options.rootfs}` : '')
+    bibArgs.push(options.additionalArgs ? options.additionalArgs : '')
 
     let bibTypeArgs: string[] = []
     if (options.types && options.types.length > 0) {
@@ -102,7 +81,7 @@ export async function build(
 
     // The builder image and BIB image must be the last arguments of each command
     podmanArgs.push(options.builderImage)
-    bibArgs.push(`--local ${options.image}`)
+    bibArgs.push(options.image)
 
     core.startGroup('Building artifact(s)')
     await execAsRoot(
@@ -143,6 +122,7 @@ export async function build(
   }
 }
 
+// Pull an image using podman
 async function pullImage(image: string, tlsVerify?: boolean): Promise<void> {
   try {
     const executible = 'podman'
@@ -156,16 +136,17 @@ async function pullImage(image: string, tlsVerify?: boolean): Promise<void> {
   }
 }
 
-// Return a map of strings to strings, where the key is the type (evaluated from the path) and the value is the path.
-// E.G. ./output/bootiso/boot.iso -> { bootiso: ./output/bootiso/boot.iso }
-function extractArtifactTypes(files: Dirent[]): Map<string, OutputArtifact> {
+// Extract artifact types and compute checksums asynchronously
+async function extractArtifactTypes(
+  files: Dirent[]
+): Promise<Map<string, OutputArtifact>> {
   core.debug(
     `Extracting artifact types from artifact paths: ${JSON.stringify(files)}`
   )
 
-  const outputArtifacts = files
+  const outputArtifacts: Promise<OutputArtifact>[] = files
     .filter((file) => file.isFile() && !file.name.endsWith('.json'))
-    .map((file) => {
+    .map(async (file) => {
       core.debug(`Extracting type from artifact path: ${JSON.stringify(file)}`)
       const fileName = file.name.split('/').pop()
       core.debug(`Extracted file name: ${fileName}`)
@@ -176,29 +157,43 @@ function extractArtifactTypes(files: Dirent[]): Map<string, OutputArtifact> {
         )
       }
 
-      // Get the type from the path.
-      // E.g. ./output/bootiso/boot.iso -> bootiso
-      const type = file.parentPath.split('/').pop()
+      let type = file.parentPath.split('/').pop()
       if (!type) {
         throw new Error(
           `Failed to extract type from artifact path: ${file.parentPath}`
         )
       }
 
+      // Convert types
+      switch (type) {
+        case 'bootiso':
+          type = 'anaconda-iso'
+          break
+        case 'vpc':
+          type = 'vhd'
+          break
+        case 'image':
+          type = 'raw'
+          break
+        default:
+          break
+      }
+
       const pathRelative = `${file.parentPath}/${file.name}`
       const pathAbsolute = path.resolve(pathRelative)
 
-      return { type, path: pathAbsolute }
+      const checksum = await generateChecksum(pathAbsolute, 'sha256')
+
+      return { type, path: pathAbsolute, checksum }
     })
 
-  // Create a Map where the key is the type and the value is the OutputArtifact
-  const artifactMap = new Map<string, OutputArtifact>()
+  // Resolve all checksum promises
+  const resolvedArtifacts = await Promise.all(outputArtifacts)
 
-  outputArtifacts.forEach((artifact) => {
+  const artifactMap = new Map<string, OutputArtifact>()
+  resolvedArtifacts.forEach((artifact) => {
     if (artifactMap.has(artifact.type)) {
       core.debug(`Type "${artifact.type}" already exists in the map. Skipping.`)
-      // Optionally, you could update or replace the existing artifact here.
-      // For example, you can decide to keep the first encountered artifact for each type.
     } else {
       artifactMap.set(artifact.type, artifact)
     }
@@ -207,6 +202,7 @@ function extractArtifactTypes(files: Dirent[]): Map<string, OutputArtifact> {
   return artifactMap
 }
 
+// Fix for GitHub Actions Podman integration issues
 async function githubActionsWorkaroundFixes(): Promise<void> {
   core.debug(
     'Configuring Podman storage (see https://github.com/osbuild/bootc-image-builder/issues/446)'

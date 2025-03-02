@@ -55,13 +55,18 @@ jobs:
       fail-fast: false
       matrix:
         types:
-          - 'raw qcow2'
-          - 'iso'
+          - raw qcow2 vmdk vhd
+          - anaconda-iso
 
     steps:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
+
+      - name: Maximize Build Space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+        with:
+          remove-codeql: true
 
       - name: Get Runner Information
         id: runner-info
@@ -83,30 +88,79 @@ jobs:
         uses: ./
         with:
           config-file: ./__fixtures__/config.toml
-          image: ghcr.io/centos-workstation/achillobator:latest
+          image: ghcr.io/ublue-os/bluefin:lts
+          builder-image: ghcr.io/centos-workstation/bootc-image-builder:latest
           chown:
             ${{ steps.runner-info.outputs.USER_UID }}:${{
             steps.runner-info.outputs.USER_GID }}
           types: ${{ matrix.types }}
+          additional-args: --use-librepo=True
 
       - name: List Outputs
         env:
           OUTPUT_PATHS_JSON: ${{ steps.action.outputs.output-paths }}
+          QCOW2_OUTPUT_PATH: ${{ steps.action.outputs.qcow2-output-path }}
+          VMDK_OUTPUT_PATH: ${{ steps.action.outputs.vmdk-output-path }}
+          ANACONDA_ISO_OUTPUT_PATH:
+            ${{ steps.action.outputs.anaconda-iso-output-path }}
+          RAW_OUTPUT_PATH: ${{ steps.action.outputs.raw-output-path }}
+          VHD_OUTPUT_PATH: ${{ steps.action.outputs.vhd-output-path }}
         run: |
+          set -x
+
           echo "Output Directory: ${{ steps.action.outputs.output-directory }}"
           echo "Manifest Path: ${{ steps.action.outputs.manifest-path }}"
           echo "Output Paths: $OUTPUT_PATHS_JSON"
 
+          # Check the manifest file type
           file ${{ steps.action.outputs.manifest-path }}
 
-          # For each key in the JSON map, output the type (key) and path
+          # For each key in the JSON map, output the type (key), path, and checksum
           for OUTPUT in $(echo "$OUTPUT_PATHS_JSON" | jq -r 'keys[]'); do
-            OUTPUT_TYPE=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".$OUTPUT.type")
-            OUTPUT_PATH=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".$OUTPUT.path")
+            # Extract the type, path, and checksum for each output
+            OUTPUT_TYPE=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".\"$OUTPUT\".type")
+            OUTPUT_PATH=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".\"$OUTPUT\".path")
+            OUTPUT_CHECKSUM=$(echo "$OUTPUT_PATHS_JSON" | jq -r ".\"$OUTPUT\".checksum")
 
+            # Output the extracted information
             echo "Output Type: $OUTPUT_TYPE"
             file "$OUTPUT_PATH"
+
+            # Verify checksum
+            if [ "$OUTPUT_CHECKSUM" != "$(sha256sum "$OUTPUT_PATH" | cut -d ' ' -f 1)" ]; then
+              echo "Checksums do not match"
+            fi
           done
+
+          echo "QCOW2 Output Path: $QCOW2_OUTPUT_PATH"
+          file "$QCOW2_OUTPUT_PATH"
+          if [ -n "$QCOW2_OUTPUT_PATH" ]; then
+            sha256sum "$QCOW2_OUTPUT_PATH"
+          fi
+
+          echo "VMDK Output Path: $VMDK_OUTPUT_PATH"
+          file "$VMDK_OUTPUT_PATH"
+          if [ -n "$VMDK_OUTPUT_PATH" ]; then
+            sha256sum "$VMDK_OUTPUT_PATH"
+          fi
+
+          echo "Anaconda ISO Output Path: $ANACONDA_ISO_OUTPUT_PATH"
+          file "$ANACONDA_ISO_OUTPUT_PATH"
+          if [ -n "$ANACONDA_ISO_OUTPUT_PATH" ]; then
+            sha256sum "$ANACONDA_ISO_OUTPUT_PATH"
+          fi
+
+          echo "RAW Output Path: $RAW_OUTPUT_PATH"
+          file "$RAW_OUTPUT_PATH"
+          if [ -n "$RAW_OUTPUT_PATH" ]; then
+            sha256sum "$RAW_OUTPUT_PATH"
+          fi
+
+          echo "VHD Output Path: $VHD_OUTPUT_PATH"
+          file "$VHD_OUTPUT_PATH"
+          if [ -n "$VHD_OUTPUT_PATH" ]; then
+            sha256sum "$VHD_OUTPUT_PATH"
+          fi
 
       - name: Upload Outputs
         uses: actions/upload-artifact@v4

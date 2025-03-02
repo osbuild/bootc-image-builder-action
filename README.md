@@ -21,9 +21,10 @@ in the `bootc-image-builder` tool itself.
   with:
     config-file: ./iso-config.toml
     image: quay.io/fedora/fedora-silverblue:latest
-    types: iso
+    types: |
+      iso
 
-- name: Upload ISO
+- name: Upload Artifact
   uses: actions/upload-artifact@v4
   with:
     name: iso
@@ -46,6 +47,12 @@ The image to use for building the ISO.
 The image to use for building the ISO.
 
 Default: `quay.io/centos-bootc/bootc-image-builder:latest`
+
+### `additional-args` (optional)
+
+Additional arguments to pass to the `bootc-image-builder` tool. This can be used
+to enable experimental features or to pass additional arguments to the
+`bootc-image-builder` tool.
 
 ### `chown` (optional)
 
@@ -92,7 +99,7 @@ subdirectories based on the type of artifact.
 
 A JSON array of the paths to the built artifacts.
 
-Example:
+Example (prettified):
 
 ```json
 [
@@ -110,6 +117,56 @@ Example:
 ### `manifest-path`
 
 The path to the manifest file used to build the artifacts.
+
+### `qcow2-output-path`
+
+The path to the qcow2 artifact. If the artifact type was not requested, this
+will be an empty string.
+
+### `qcow2-output-checksum`
+
+The checksum of the qcow2 artifact. If the artifact type was not requested, this
+will be an empty string.
+
+### `vmdk-output-path`
+
+The path to the VMDK artifact. If the artifact type was not requested, this will
+be an empty string.
+
+### `vmdk-output-checksum`
+
+The checksum of the VMDK artifact. If the artifact type was not requested, this
+will be an empty string.
+
+### `anaconda-iso-output-path`
+
+The path to the Anaconda ISO artifact. If the artifact type was not requested,
+this will be an empty string.
+
+### `anaconda-iso-output-checksum`
+
+The checksum of the Anaconda ISO artifact. If the artifact type was not
+requested, this will be an empty string.
+
+### `raw-output-path`
+
+The path to the raw artifact. If the artifact type was not requested, this will
+be an empty string.
+
+### `raw-output-checksum`
+
+The checksum of the raw artifact. If the artifact type was not requested, this
+will be an empty string.
+
+### `vhd-output-path`
+
+The path to the VHD artifact. If the artifact type was not requested, this will
+be an empty string.
+
+### `vhd-output-checksum`
+
+The checksum of the VHD artifact. If the artifact type was not requested, this
+will be an empty string.
 
 ## License
 

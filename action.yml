@@ -14,6 +14,9 @@ inputs:
     description: 'The Bootc Image Builder image to use for running the action'
     required: false
     default: 'quay.io/centos-bootc/bootc-image-builder:latest'
+  additional-args:
+    description: 'Additional arguments to pass to Bootc Image Builder'
+    required: false
   chown:
     description: 'The user and group to chown the output files to'
     required: false
@@ -49,6 +52,46 @@ outputs:
       array has the following keys: type and path'
   manifest-path:
     description: 'The path to the manifest file'
+  qcow2-output-path:
+    description:
+      'The path to the qcow2 disk image. If the artifact type was not requested,
+      this will be an empty string.'
+  qcow2-output-checksum:
+    description:
+      'The checksum of the qcow2 disk image. If the artifact type was not
+      requested, this will be an empty string.'
+  vmdk-output-path:
+    description:
+      'The path to the vmdk disk image. If the artifact type was not requested,
+      this will be an empty string.'
+  vmdk-output-checksum:
+    description:
+      'The checksum of the vmdk disk image. If the artifact type was not
+      requested, this will be an empty string.'
+  anaconda-iso-output-path:
+    description:
+      'The path to the Anaconda ISO image. If the artifact type was not
+      requested, this will be an empty string.'
+  anaconda-iso-output-checksum:
+    description:
+      'The checksum of the Anaconda ISO image. If the artifact type was not
+      requested, this will be an empty string.'
+  raw-output-path:
+    description:
+      'The path to the raw disk image. If the artifact type was not requested,
+      this will be an empty string.'
+  raw-output-checksum:
+    description:
+      'The checksum of the raw disk image. If the artifact type was not
+      requested, this will be an empty string.'
+  vhd-output-path:
+    description:
+      'The path to the VHD artifact. If the artifact type was not requested,
+      this will be an empty string.'
+  vhd-output-checksum:
+    description:
+      'The checksum of the VHD artifact. If the artifact type was not requested,
+      this will be an empty string.'
 
 runs:
   using: node20

@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
-import { AWSOptions, build } from './bib.js'
+import { build } from './bib.js'
+import { AWSOptions, OutputArtifact } from './types.js'
 
 /**
  * The main function for the action.
@@ -11,6 +12,7 @@ export async function run(): Promise<void> {
     const configFilePath: string = core.getInput('config-file')
     const image: string = core.getInput('image')
     const builderImage: string = core.getInput('builder-image')
+    const additionalArgs: string = core.getInput('additional-args')
     const chown: string = core.getInput('chown')
     const rootfs: string = core.getInput('rootfs')
     const tlsVerify: boolean =
@@ -32,6 +34,7 @@ export async function run(): Promise<void> {
       configFilePath,
       image,
       builderImage,
+      additionalArgs,
       chown,
       rootfs,
       tlsVerify,
@@ -46,8 +49,21 @@ export async function run(): Promise<void> {
       'output-paths',
       JSON.stringify(Object.fromEntries(buildOutput.outputArtifacts.entries()))
     )
+    setArtifactSpecificOutputs(buildOutput.outputArtifacts)
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
+  }
+}
+
+function setArtifactSpecificOutputs(
+  outputArtifacts: Map<string, OutputArtifact>
+): void {
+  for (const [type, artifact] of outputArtifacts.entries()) {
+    core.debug(
+      `Setting output path for ${type} to ${artifact.path} with checksum ${artifact.checksum}`
+    )
+    core.setOutput(`${type}-output-path`, artifact.path)
+    core.setOutput(`${type}-output-checksum`, artifact.checksum)
   }
 }
