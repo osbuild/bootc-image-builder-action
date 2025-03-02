@@ -1,7 +1,7 @@
 import * as require$$0 from 'os';
 import require$$0__default from 'os';
 import require$$0$1 from 'crypto';
-import require$$1 from 'fs';
+import require$$1, { createReadStream } from 'fs';
 import require$$1$5 from 'path';
 import require$$2 from 'http';
 import require$$3 from 'https';
@@ -27409,7 +27409,8 @@ function extractArtifactTypes(files) {
         }
         const pathRelative = `${file.parentPath}/${file.name}`;
         const pathAbsolute = require$$1$5.resolve(pathRelative);
-        return { type, path: pathAbsolute };
+        const checksum = generateChecksum(pathAbsolute, 'sha256');
+        return { type, path: pathAbsolute, checksum };
     });
     // Create a Map where the key is the type and the value is the OutputArtifact
     const artifactMap = new Map();
@@ -27431,6 +27432,23 @@ async function githubActionsWorkaroundFixes() {
     await createDirectory('/etc/containers');
     const storageConf = Buffer.from('[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n');
     await writeToFile('/etc/containers/storage.conf', storageConf);
+}
+async function generateChecksum(filePath, checksumType) {
+    switch (checksumType) {
+        case 'sha256':
+            return await generateSHA256Checksum(filePath);
+        default:
+            throw new Error(`Unknown checksum type: ${checksumType}`);
+    }
+}
+async function generateSHA256Checksum(filePath) {
+    return new Promise((resolve, reject) => {
+        const hash = require$$0$1.createHash('sha256');
+        const stream = createReadStream(filePath);
+        stream.on('data', (chunk) => hash.update(chunk));
+        stream.on('error', (err) => reject(err));
+        stream.on('end', () => resolve(hash.digest('hex')));
+    });
 }
 
 /**
@@ -27481,9 +27499,9 @@ async function run() {
     }
 }
 function setArtifactSpecificOutputs(outputArtifacts) {
-    for (const [type, path] of outputArtifacts.entries()) {
-        coreExports.debug(`Setting output path for ${type} to ${path}`);
-        coreExports.setOutput(`${type}-output-path`, path);
+    for (const [type, artifact] of outputArtifacts.entries()) {
+        coreExports.debug(`Setting output path for ${type} to ${artifact.path}`);
+        coreExports.setOutput(`${type}-output-path`, artifact.path);
     }
 }
 

@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
-import { Dirent } from 'fs'
+import crypto from 'crypto'
+import { Dirent, createReadStream } from 'fs'
 import * as fs from 'fs/promises'
 import path from 'path'
 import {
@@ -213,7 +214,9 @@ function extractArtifactTypes(files: Dirent[]): Map<string, OutputArtifact> {
       const pathRelative = `${file.parentPath}/${file.name}`
       const pathAbsolute = path.resolve(pathRelative)
 
-      return { type, path: pathAbsolute }
+      const checksum = generateChecksum(pathAbsolute, 'sha256')
+
+      return { type, path: pathAbsolute, checksum }
     })
 
   // Create a Map where the key is the type and the value is the OutputArtifact
@@ -242,4 +245,27 @@ async function githubActionsWorkaroundFixes(): Promise<void> {
     '[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n'
   )
   await writeToFile('/etc/containers/storage.conf', storageConf)
+}
+
+async function generateChecksum(
+  filePath: string,
+  checksumType: string
+): Promise<string> {
+  switch (checksumType) {
+    case 'sha256':
+      return await generateSHA256Checksum(filePath)
+    default:
+      throw new Error(`Unknown checksum type: ${checksumType}`)
+  }
+}
+
+async function generateSHA256Checksum(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256')
+    const stream = createReadStream(filePath)
+
+    stream.on('data', (chunk: Buffer) => hash.update(chunk))
+    stream.on('error', (err: Error) => reject(err))
+    stream.on('end', () => resolve(hash.digest('hex')))
+  })
 }

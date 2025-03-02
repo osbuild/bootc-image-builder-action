@@ -58,8 +58,8 @@ export async function run(): Promise<void> {
 function setArtifactSpecificOutputs(
   outputArtifacts: Map<string, OutputArtifact>
 ): void {
-  for (const [type, path] of outputArtifacts.entries()) {
-    core.debug(`Setting output path for ${type} to ${path}`)
-    core.setOutput(`${type}-output-path`, path)
+  for (const [type, artifact] of outputArtifacts.entries()) {
+    core.debug(`Setting output path for ${type} to ${artifact.path}`)
+    core.setOutput(`${type}-output-path`, artifact.path)
   }
 }
