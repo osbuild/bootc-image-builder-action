@@ -2,15 +2,15 @@
 
 GitHub Action for building ISOs and disk images for Bootable Containers.
 
-AWS support is currently untested and may not work as expected.
-
 ## Scope
 
 This action is intended to be as close to a 1:1 mapping of the
 `bootc-image-builder` tool as possible. It is not interested in providing
 additional features or functionality beyond what is provided by the
 `bootc-image-builder` tool, and therefore these features should be implemented
-in the `bootc-image-builder` tool itself.
+in the `bootc-image-builder` tool itself. The only exception to this is the
+generation of checksums for the built artifacts, since this is a common
+requirement for automated workflows.
 
 ## Usage
 
@@ -73,7 +73,9 @@ Default: `true`
 The types of artifacts to build. Can be any type supported by
 [osbuild/bootc-image-builder](https://github.com/osbuild/bootc-image-builder).
 
-The default will change depending on the image used.
+Default: `qcow2`
+
+Note: Only non-cloud types are currently tested.
 
 ### `aws-ami-name` (optional)
 
@@ -102,16 +104,28 @@ A JSON array of the paths to the built artifacts.
 Example (prettified):
 
 ```json
-[
-  {
-    "type": "qcow2",
-    "path": "/path/to/artifact.qcow2"
+{
+  "vhd": {
+    "type": "vhd",
+    "path": "/home/runner/work/bootc-image-builder-action/bootc-image-builder-action/output/vpc/disk.vhd",
+    "checksum": "a38c872fb03c93cebd4658a878ecb94a38fabfb913d68570dfeb7e6c39134732"
   },
-  {
+  "vmdk": {
+    "type": "vmdk",
+    "path": "/home/runner/work/bootc-image-builder-action/bootc-image-builder-action/output/vmdk/disk.vmdk",
+    "checksum": "e6e1ee599a294da25512fb8dbc21b5578f90e6937bd8341669c251a6f64407e1"
+  },
+  "qcow2": {
+    "type": "qcow2",
+    "path": "/home/runner/work/bootc-image-builder-action/bootc-image-builder-action/output/qcow2/disk.qcow2",
+    "checksum": "fb740cacb1258e061990e832e7a3ff148d9e56dc553013bba891a1f12fd8e73b"
+  },
+  "raw": {
     "type": "raw",
-    "path": "/path/to/artifact.raw"
+    "path": "/home/runner/work/bootc-image-builder-action/bootc-image-builder-action/output/image/disk.raw",
+    "checksum": "b139fe8b3702291c95de264b01d5a5a342cba6265511dd05c5784dbbdb37a268"
   }
-]
+}
 ```
 
 ### `manifest-path`
