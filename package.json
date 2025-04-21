@@ -38,25 +38,25 @@
     "@actions/core": "^1.11.1"
   },
   "devDependencies": {
-    "@eslint/compat": "^1.2.7",
+    "@eslint/compat": "^1.2.8",
     "@github/local-action": "^2.6.4",
-    "@rollup/plugin-commonjs": "^28.0.1",
-    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.1",
-    "@types/node": "^22.13.8",
-    "@typescript-eslint/eslint-plugin": "^8.25.0",
-    "@typescript-eslint/parser": "^8.25.0",
-    "eslint": "^9.21.0",
-    "eslint-config-prettier": "^10.0.2",
+    "@types/node": "^22.14.1",
+    "@typescript-eslint/eslint-plugin": "^8.30.1",
+    "@typescript-eslint/parser": "^8.30.1",
+    "eslint": "^9.25.0",
+    "eslint-config-prettier": "^10.1.2",
     "eslint-import-resolver-typescript": "^3.8.3",
     "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-prettier": "^5.2.6",
     "make-coverage-badge": "^1.2.0",
-    "prettier": "^3.5.2",
-    "prettier-eslint": "^16.3.0",
-    "rollup": "^4.34.9",
+    "prettier": "^3.5.3",
+    "prettier-eslint": "^16.4.1",
+    "rollup": "^4.40.0",
     "ts-node": "^10.9.2",
-    "typescript": "5.7.3"
+    "typescript": "5.8.3"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"
