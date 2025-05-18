@@ -220,13 +220,30 @@ async function githubActionsWorkaroundFixes(): Promise<void> {
   await writeToFile('/etc/containers/storage.conf', storageConf)
 }
 
-// Get all AWS_* environment variables in a KV map
-function getAwsEnvironmentVariables() {
-  const awsEnv: { [key: string]: string } = {}
+// Get all AWS_* environment variables in a key-value map
+function getAwsEnvironmentVariables(): Record<string, string> {
+  const awsEnv: Record<string, string> = {}
+
+  // List of AWS env vars that are generally NOT secrets
+  const nonSecretKeys = new Set([
+    'AWS_REGION',
+    'AWS_DEFAULT_REGION',
+    'AWS_PROFILE',
+    'AWS_EXECUTION_ENV',
+    'AWS_ROLE_SESSION_NAME',
+    'AWS_DEFAULT_OUTPUT'
+  ])
+
   for (const [key, value] of Object.entries(process.env)) {
-    if (key.startsWith('AWS_')) {
-      awsEnv[key] = value || ''
+    if (key.startsWith('AWS_') && value !== undefined) {
+      awsEnv[key] = value
+
+      // Only mask sensitive values
+      if (!nonSecretKeys.has(key)) {
+        core.setSecret(value)
+      }
     }
   }
+
   return awsEnv
 }
