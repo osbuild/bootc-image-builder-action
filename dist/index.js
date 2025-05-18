@@ -27345,7 +27345,7 @@ async function build(options) {
                 .map((type) => `--type ${type}`);
         }
         bibArgs.push(...bibTypeArgs);
-        if (options.types?.includes('aws')) {
+        if (options.types?.includes('ami')) {
             podmanArgs.push('--env AWS_*');
             bibArgs.push(`--aws-bucket ${options.awsOptions?.BucketName}`);
             bibArgs.push(`--aws-ami-name ${options.awsOptions?.AMIName}`);

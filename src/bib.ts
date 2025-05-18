@@ -67,7 +67,7 @@ export async function build(
     }
     bibArgs.push(...bibTypeArgs)
 
-    if (options.types?.includes('aws')) {
+    if (options.types?.includes('ami')) {
       podmanArgs.push('--env AWS_*')
 
       bibArgs.push(`--aws-bucket ${options.awsOptions?.BucketName}`)
