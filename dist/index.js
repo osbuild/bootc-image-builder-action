@@ -27345,8 +27345,13 @@ async function build(options) {
                 .map((type) => `--type ${type}`);
         }
         bibArgs.push(...bibTypeArgs);
-        if (options.types?.includes('aws')) {
-            podmanArgs.push('--env AWS_*');
+        if (options.types?.includes('ami')) {
+            const awsEnv = getAwsEnvironmentVariables();
+            for (const [key, value] of Object.entries(awsEnv)) {
+                if (key.startsWith('AWS_')) {
+                    podmanArgs.push(`--env ${key}=${value}`);
+                }
+            }
             bibArgs.push(`--aws-bucket ${options.awsOptions?.BucketName}`);
             bibArgs.push(`--aws-ami-name ${options.awsOptions?.AMIName}`);
             bibArgs.push(options.awsOptions?.Region
@@ -27450,6 +27455,29 @@ async function githubActionsWorkaroundFixes() {
     await createDirectory('/etc/containers');
     const storageConf = Buffer.from('[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n');
     await writeToFile('/etc/containers/storage.conf', storageConf);
+}
+// Get all AWS_* environment variables in a key-value map
+function getAwsEnvironmentVariables() {
+    const awsEnv = {};
+    // List of AWS env vars that are generally NOT secrets
+    const nonSecretKeys = new Set([
+        'AWS_REGION',
+        'AWS_DEFAULT_REGION',
+        'AWS_PROFILE',
+        'AWS_EXECUTION_ENV',
+        'AWS_ROLE_SESSION_NAME',
+        'AWS_DEFAULT_OUTPUT'
+    ]);
+    for (const [key, value] of Object.entries(process.env)) {
+        if (key.startsWith('AWS_') && value !== undefined) {
+            awsEnv[key] = value;
+            // Only mask sensitive values
+            if (!nonSecretKeys.has(key)) {
+                coreExports.setSecret(value);
+            }
+        }
+    }
+    return awsEnv;
 }
 
 /**
