@@ -68,7 +68,12 @@ export async function build(
     bibArgs.push(...bibTypeArgs)
 
     if (options.types?.includes('ami')) {
-      podmanArgs.push('--env AWS_*')
+      const awsEnv = getAwsEnvironmentVariables()
+      for (const [key, value] of Object.entries(awsEnv)) {
+        if (key.startsWith('AWS_')) {
+          podmanArgs.push(`--env ${key}=${value}`)
+        }
+      }
 
       bibArgs.push(`--aws-bucket ${options.awsOptions?.BucketName}`)
       bibArgs.push(`--aws-ami-name ${options.awsOptions?.AMIName}`)
@@ -213,4 +218,15 @@ async function githubActionsWorkaroundFixes(): Promise<void> {
     '[storage]\ndriver = "overlay"\nrunroot = "/run/containers/storage"\ngraphroot = "/var/lib/containers/storage"\n'
   )
   await writeToFile('/etc/containers/storage.conf', storageConf)
+}
+
+// Get all AWS_* environment variables in a KV map
+function getAwsEnvironmentVariables() {
+  const awsEnv: { [key: string]: string } = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (key.startsWith('AWS_')) {
+      awsEnv[key] = value || ''
+    }
+  }
+  return awsEnv
 }
