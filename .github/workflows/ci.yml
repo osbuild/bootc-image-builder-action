@@ -19,7 +19,7 @@ jobs:
   test-typescript:
     name: TypeScript Tests
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
     steps:
       - name: Checkout
         id: checkout
@@ -44,13 +44,11 @@ jobs:
         id: npm-lint
         run: npm run lint
 
-      # - name: Test
-      #   id: npm-ci-test
-      #   run: npm run ci-test
-
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-24.04
+    needs: test-typescript
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -88,12 +86,12 @@ jobs:
         uses: ./
         with:
           config-file: ./__fixtures__/config.toml
-          image: ghcr.io/ublue-os/bluefin:lts
-          builder-image: ghcr.io/centos-workstation/bootc-image-builder:latest
+          image: quay.io/fedora/fedora-silverblue:latest
           chown:
             ${{ steps.runner-info.outputs.USER_UID }}:${{
             steps.runner-info.outputs.USER_GID }}
           types: ${{ matrix.types }}
+          rootfs: btrfs
           additional-args: --use-librepo=True
 
       - name: List Outputs

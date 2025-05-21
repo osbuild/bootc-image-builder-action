@@ -1,23 +1,25 @@
-# @bootc-warehouse/bootc-image-builder-action
+# `@osbuild/bootc-image-builder-action`
 
-GitHub Action for building ISOs and disk images for Bootable Containers.
+GitHub Action for building ISOs and disk images for
+[Bootable Containers](https://bootc-dev.github.io/bootc/).
 
 ## Scope
 
-This action is intended to be as close to a 1:1 mapping of the
-`bootc-image-builder` tool as possible. It is not interested in providing
-additional features or functionality beyond what is provided by the
-`bootc-image-builder` tool, and therefore these features should be implemented
-in the `bootc-image-builder` tool itself. The only exception to this is the
-generation of checksums for the built artifacts, since this is a common
-requirement for automated workflows.
+This action is intended to be a near 1:1 mapping of the
+[Bootc Image Builder](https://github.com/osbuild/bootc-image-builder/) project.
+It is not interested in providing additional features or functionality beyond
+what is provided Bootc Image Builder, and therefore these features should be
+implemented in the upstream project itself. A few exceptions may be made on a
+case-by-case basis.
 
 ## Usage
+
+An ISO can be built using the following workflow snippet:
 
 ```yaml
 - name: Build ISO
   id: build-iso
-  uses: bootc-warehouse/bootc-image-builder-action@vX.Y.Z
+  uses: osbuild/bootc-image-builder-action@vX.Y.Z
   with:
     config-file: ./iso-config.toml
     image: quay.io/fedora/fedora-silverblue:latest
@@ -50,9 +52,9 @@ Default: `quay.io/centos-bootc/bootc-image-builder:latest`
 
 ### `additional-args` (optional)
 
-Additional arguments to pass to the `bootc-image-builder` tool. This can be used
-to enable experimental features or to pass additional arguments to the
-`bootc-image-builder` tool.
+Additional arguments to pass to Bootc Image Builder. This can be used to enable
+experimental features or to pass additional arguments not natively supported by
+this action.
 
 ### `chown` (optional)
 
@@ -60,7 +62,7 @@ The user and group to use for the output directory. In the form of `user:group`.
 
 ### `rootfs` (optional)
 
-The root filesystem to use for the ISO.
+The root filesystem to use for the disk image.
 
 ### `tls-verify` (optional)
 
@@ -79,16 +81,16 @@ Note: Only non-cloud types are currently tested.
 
 ### `aws-ami-name` (optional)
 
-The name of the AMI to create. Only used when `aws` is in `types`.
+The name of the AMI to create. Required when an `ami` type is requested.
 
 ### `aws-region` (optional)
 
-The region to create the AMI in. Only used when `aws` is in `types`.
+The region to create the AMI in. Required when an `ami` type is requested.
 
 ### `aws-bucket` (optional)
 
-The name of the S3 bucket to upload the AMI to. Only used when `aws` is in
-`types`.
+The name of the S3 bucket to upload the AMI to. Required when an `ami` type is
+requested.
 
 ## Outputs
 
