@@ -1,8 +1,7 @@
 name: Bootc Image Builder Action
 description: An action to generate ISOs and disk images for Bootc images
-author: Robert Sturla
+author: Robert Sturla & Image Builder team
 
-# Define your inputs here.
 inputs:
   config-file:
     description: 'The path to the configuration file'
@@ -21,7 +20,7 @@ inputs:
     description: 'The user and group to chown the output files to'
     required: false
   rootfs:
-    description: 'The path to the rootfs'
+    description: 'The required rootfs to use for the disk image'
     required: false
   tls-verify:
     description: 'Whether to verify TLS certificates'
