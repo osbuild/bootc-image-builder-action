@@ -27326,7 +27326,10 @@ async function build(options) {
         const podmanArgs = [];
         const bibArgs = [];
         podmanArgs.push('run');
-		podmanArgs.push(`--platform ${options.platform}`);
+				if (options.platform)
+				{
+					podmanArgs.push(`--platform ${options.platform}`);
+				}
         podmanArgs.push('--rm');
         podmanArgs.push('--privileged');
         podmanArgs.push('--security-opt label=type:unconfined_t');
@@ -27397,8 +27400,8 @@ async function pullImage(image, tlsVerify) {
     try {
         const executible = 'podman';
         const tlsFlags = tlsVerify ? '' : '--tls-verify=false';
-		const platform = platform ? '' : `--platform ${options.platform}`;
-        await execAsRoot(executible, ['pull', tlsFlags, image].filter((arg) => arg));
+		const platformArg = options.platform ? `--platform ${options.platform}` : '';
+		await execAsRoot(executible, ['pull', platformArg, tlsFlags, image].filter((arg) => arg));
     }
     catch (error) {
         coreExports.setFailed(`Failed to pull image ${image}: ${error.message}`);

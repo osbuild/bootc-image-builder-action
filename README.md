@@ -72,9 +72,7 @@ Default: `true`
 
 ### `platform` (optional)
 
-Specify the archatecture of the image to pull
-
-Default: `linux/amd64`
+Specify the architecture of the image to pull
 
 ### `types` (optional)
 

@@ -43,7 +43,9 @@ export async function build(
     podmanArgs.push('run')
     podmanArgs.push('--rm')
     podmanArgs.push('--privileged')
-    podmanArgs.push(`--platform ${options.platform || ''}`)
+    if (options.platform) {
+      podmanArgs.push(`--platform ${options.platform}`)
+    }
     podmanArgs.push('--security-opt label=type:unconfined_t')
     podmanArgs.push(
       '--volume /var/lib/containers/storage:/var/lib/containers/storage'
@@ -127,16 +129,18 @@ export async function build(
     }
   }
 }
-
-// Pull an image using podman
-async function pullImage(image: string, tlsVerify?: boolean): Promise<void> {
+async function pullImage(
+  image: string,
+  tlsVerify?: boolean,
+  platform?: string
+): Promise<void> {
   try {
     const executible = 'podman'
     const tlsFlags = tlsVerify ? '' : '--tls-verify=false'
-    const platform = platform ? '' : `--platform ${options.platform}`
+    const platformFlag = platform ? `--platform ${platform}` : ''
     await execAsRoot(
       executible,
-      ['pull', tlsFlags, image].filter((arg) => arg)
+      ['pull', tlsFlags, platformFlag, image].filter((arg) => arg)
     )
   } catch (error) {
     core.setFailed(`Failed to pull image ${image}: ${(error as Error).message}`)
