@@ -70,6 +70,12 @@ Whether to verify TLS certificates.
 
 Default: `true`
 
+### `platform` (optional)
+
+Specify the archatecture of the image to pull
+
+Default: `linux/amd64`
+
 ### `types` (optional)
 
 The types of artifacts to build. Can be any type supported by

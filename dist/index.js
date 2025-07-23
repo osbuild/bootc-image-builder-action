@@ -27326,6 +27326,7 @@ async function build(options) {
         const podmanArgs = [];
         const bibArgs = [];
         podmanArgs.push('run');
+		podmanArgs.push(`--platform ${options.platform}`);
         podmanArgs.push('--rm');
         podmanArgs.push('--privileged');
         podmanArgs.push('--security-opt label=type:unconfined_t');
@@ -27396,6 +27397,7 @@ async function pullImage(image, tlsVerify) {
     try {
         const executible = 'podman';
         const tlsFlags = tlsVerify ? '' : '--tls-verify=false';
+		const platform = platform ? '' : `--platform ${options.platform}`;
         await execAsRoot(executible, ['pull', tlsFlags, image].filter((arg) => arg));
     }
     catch (error) {
