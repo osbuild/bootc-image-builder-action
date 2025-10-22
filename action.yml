@@ -93,5 +93,5 @@ outputs:
       this will be an empty string.'
 
 runs:
-  using: node20
+  using: node24
   main: dist/index.js
