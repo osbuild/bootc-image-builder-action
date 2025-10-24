@@ -12,6 +12,7 @@ export async function run(): Promise<void> {
     const configFilePath: string = core.getInput('config-file')
     const image: string = core.getInput('image')
     const builderImage: string = core.getInput('builder-image')
+    const platform: string = core.getInput('platform') || 'linux/amd64'
     const additionalArgs: string = core.getInput('additional-args')
     const chown: string = core.getInput('chown')
     const rootfs: string = core.getInput('rootfs')
@@ -34,6 +35,7 @@ export async function run(): Promise<void> {
       configFilePath,
       image,
       builderImage,
+      platform,
       additionalArgs,
       chown,
       rootfs,
