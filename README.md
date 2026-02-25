@@ -70,6 +70,10 @@ Whether to verify TLS certificates.
 
 Default: `true`
 
+### `platform` (optional)
+
+Specify the architecture of the image to pull
+
 ### `types` (optional)
 
 The types of artifacts to build. Can be any type supported by
