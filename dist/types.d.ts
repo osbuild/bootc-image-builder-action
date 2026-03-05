@@ -1,6 +1,7 @@
 export interface BootcImageBuilderOptions {
     configFilePath: string;
     image: string;
+    platform?: string;
     builderImage: string;
     additionalArgs?: string;
     chown?: string;
