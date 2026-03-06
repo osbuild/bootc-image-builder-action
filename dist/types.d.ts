@@ -8,6 +8,7 @@ export interface BootcImageBuilderOptions {
     tlsVerify: boolean;
     types?: Array<string>;
     awsOptions?: AWSOptions;
+    installerPayloadRef?: string;
 }
 export interface BootcImageBuilderOutputs {
     manifestPath: string;

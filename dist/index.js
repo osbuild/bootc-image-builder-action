@@ -27317,6 +27317,9 @@ async function build(options) {
         coreExports.startGroup('Pulling required images');
         await pullImage(options.builderImage, options.tlsVerify);
         await pullImage(options.image, options.tlsVerify);
+        if (options.installerPayloadRef) {
+            await pullImage(options.installerPayloadRef, options.tlsVerify);
+        }
         coreExports.endGroup();
         // Create the output directory
         const outputDirectory = './output';
@@ -27338,6 +27341,9 @@ async function build(options) {
         bibArgs.push(options.chown ? `--chown ${options.chown}` : '');
         bibArgs.push(options.rootfs ? `--rootfs ${options.rootfs}` : '');
         bibArgs.push(options.additionalArgs ? options.additionalArgs : '');
+        bibArgs.push(options.installerPayloadRef
+            ? `--installer-payload-ref ${options.installerPayloadRef}`
+            : '');
         let bibTypeArgs = [];
         if (options.types && options.types.length > 0) {
             bibTypeArgs = options.types
