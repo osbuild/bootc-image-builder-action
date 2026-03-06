@@ -26,6 +26,9 @@ export async function build(
     core.startGroup('Pulling required images')
     await pullImage(options.builderImage, options.tlsVerify)
     await pullImage(options.image, options.tlsVerify)
+    if (options.installerPayloadRef) {
+      await pullImage(options.installerPayloadRef, options.tlsVerify)
+    }
     core.endGroup()
 
     // Create the output directory
@@ -58,6 +61,11 @@ export async function build(
     bibArgs.push(options.chown ? `--chown ${options.chown}` : '')
     bibArgs.push(options.rootfs ? `--rootfs ${options.rootfs}` : '')
     bibArgs.push(options.additionalArgs ? options.additionalArgs : '')
+    bibArgs.push(
+      options.installerPayloadRef
+        ? `--installer-payload-ref ${options.installerPayloadRef}`
+        : ''
+    )
 
     let bibTypeArgs: string[] = []
     if (options.types && options.types.length > 0) {
