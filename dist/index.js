@@ -28898,6 +28898,14 @@ function error(message, properties = {}) {
     issueCommand('error', toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 /**
+ * Adds a warning issue
+ * @param message warning issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
+ */
+function warning(message, properties = {}) {
+    issueCommand('warning', toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+/**
  * Begin an output group.
  *
  * Output until the next `groupEnd` will be foldable in this group
@@ -29157,6 +29165,7 @@ function getAwsEnvironmentVariables() {
  */
 async function run() {
     try {
+        warning('bootc-image-builder-action is deprecated. Use osbuild/image-builder-action. See the README.');
         const configFilePath = getInput('config-file');
         const image = getInput('image');
         const builderImage = getInput('builder-image');

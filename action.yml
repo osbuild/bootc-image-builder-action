@@ -1,5 +1,7 @@
 name: Bootc Image Builder Action
-description: An action to generate ISOs and disk images for Bootc images
+description:
+  'Deprecated. Use osbuild/image-builder-action. Builds bootc disk images and
+  ISOs with bootc-image-builder.'
 author: Robert Sturla & Image Builder team
 
 inputs:
