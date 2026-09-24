@@ -9,6 +9,10 @@ import { AWSOptions, OutputArtifact } from './types.js'
  */
 export async function run(): Promise<void> {
   try {
+    core.warning(
+      'bootc-image-builder-action is deprecated. Use osbuild/image-builder-action. See the README.'
+    )
+
     const configFilePath: string = core.getInput('config-file')
     const image: string = core.getInput('image')
     const builderImage: string = core.getInput('builder-image')

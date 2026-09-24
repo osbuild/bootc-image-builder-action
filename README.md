@@ -1,9 +1,35 @@
 # `@osbuild/bootc-image-builder-action`
 
+## Deprecation notice
+
+> [!WARNING]
+> This action is deprecated. Migrate to [osbuild/image-builder-action](https://github.com/osbuild/image-builder-action).
+
+Building bootc images is now supported by [image-builder](https://github.com/osbuild/image-builder).
+
+The replacement action uses different inputs and outputs and may not support every feature of this action. See its [documentation](https://github.com/osbuild/image-builder-action#readme) before migrating. If a feature you need is missing, please [open an issue](https://github.com/osbuild/image-builder-action/issues).
+
+Alternatively, you can build a bootc disk image directly with the image-builder container in a GitHub Actions job:
+
+```yaml
+- name: Build bootc qcow2
+  run: |
+    sudo podman pull quay.io/centos-bootc/centos-bootc:stream10
+    mkdir -p output
+    sudo podman run --privileged --rm \
+      -v "$PWD/output:/output" \
+      -v /var/lib/containers/storage:/var/lib/containers/storage \
+      ghcr.io/osbuild/image-builder-cli:latest \
+      --bootc-ref quay.io/centos-bootc/centos-bootc:stream10 build qcow2
+    sudo chown -R "$(id -u):$(id -g)" output
+```
+
+## Legacy usage
+
 GitHub Action for building ISOs and disk images for
 [Bootable Containers](https://bootc-dev.github.io/bootc/).
 
-## Scope
+### Scope
 
 This action is intended to be a near 1:1 mapping of the
 [Bootc Image Builder](https://github.com/osbuild/bootc-image-builder/) project.
@@ -12,7 +38,7 @@ what is provided Bootc Image Builder, and therefore these features should be
 implemented in the upstream project itself. A few exceptions may be made on a
 case-by-case basis.
 
-## Usage
+### Usage
 
 An ISO can be built using the following workflow snippet:
 
@@ -34,7 +60,7 @@ An ISO can be built using the following workflow snippet:
     if-no-files-found: error
 ```
 
-## Inputs
+## Legacy inputs
 
 ### `config-file`
 
@@ -92,7 +118,7 @@ The region to create the AMI in. Required when an `ami` type is requested.
 The name of the S3 bucket to upload the AMI to. Required when an `ami` type is
 requested.
 
-## Outputs
+## Legacy outputs
 
 ### `output-directory`
 
